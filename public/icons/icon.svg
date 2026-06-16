@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#C9A8E0"/>
+      <stop offset="50%" style="stop-color:#F4A0C8"/>
+      <stop offset="100%" style="stop-color:#FBBF8A"/>
+    </linearGradient>
+  </defs>
+  <!-- Fond arrondi -->
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+  <!-- Ligne ondulée -->
+  <path d="M0,256 C80,180 160,330 256,256 C352,182 432,330 512,256"
+        fill="none" stroke="white" stroke-width="28" stroke-linecap="round" opacity="0.9"/>
+  <!-- VS -->
+  <text x="256" y="280" font-family="Arial, sans-serif" font-size="80"
+        font-weight="bold" fill="white" text-anchor="middle" opacity="0.95">VS</text>
+  <!-- Micro -->
+  <text x="150" y="380" font-size="90" text-anchor="middle">🎤</text>
+  <!-- Note de musique -->
+  <text x="380" y="160" font-size="80" text-anchor="middle">♪</text>
+</svg>
