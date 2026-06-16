@@ -3,7 +3,7 @@ export interface Song {
   title: string
   artist: string
   duration_sec: number
-  storage_path: string
+  youtube_video_id: string
   cover_url: string | null
   difficulty: 1 | 2 | 3
   is_active: boolean

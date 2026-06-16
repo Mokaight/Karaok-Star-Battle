@@ -1,11 +1,8 @@
--- ============================================
--- Données de test — 3 chansons exemple
--- À remplacer par les vraies chansons
--- Les fichiers MP3 doivent être uploadés dans
--- le bucket "songs" de Supabase Storage
--- ============================================
+-- Données de test avec vidéos YouTube réelles
+-- Remplacer les IDs par les vrais IDs de chansons choisies
 
-INSERT INTO public.songs (title, artist, duration_sec, storage_path, difficulty) VALUES
-  ('Parisien', 'Artiste Test', 180, 'songs/parisien.mp3', 1),
-  ('Fade Up', 'Artiste Test', 200, 'songs/fade-up.mp3', 2),
-  ('Midnight Sun', 'Artiste Test', 220, 'songs/midnight-sun.mp3', 3);
+INSERT INTO public.songs (title, artist, duration_sec, youtube_video_id, difficulty) VALUES
+  ('Parisien', 'Artiste Test', 180, 'dQw4w9WgXcQ', 1),
+  ('Fade Up',  'Artiste Test', 200, 'dQw4w9WgXcQ', 2),
+  ('Midnight Sun', 'Artiste Test', 220, 'dQw4w9WgXcQ', 3)
+ON CONFLICT DO NOTHING;

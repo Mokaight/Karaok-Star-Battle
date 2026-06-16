@@ -23,11 +23,10 @@ export async function getSongById(id: string): Promise<Song | null> {
   return data
 }
 
-export async function getSongAudioUrl(storagePath: string): Promise<string> {
-  const { data, error } = await supabase.storage
-    .from('songs')
-    .createSignedUrl(storagePath, 3600)
+export function getYouTubeThumbnail(videoId: string): string {
+  return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+}
 
-  if (error || !data) throw new Error('Impossible de charger la chanson')
-  return data.signedUrl
+export function getYouTubeEmbedUrl(videoId: string): string {
+  return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&playsinline=1&rel=0&modestbranding=1&controls=0&disablekb=1`
 }
