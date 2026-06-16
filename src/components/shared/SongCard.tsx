@@ -5,7 +5,6 @@ import { formatDuration } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import type { Song } from '@/types'
 
-const DIFFICULTY_LABELS = ['', 'Facile', 'Moyen', 'Difficile']
 const DIFFICULTY_COLORS = ['', 'text-green-400', 'text-brand-violet', 'text-brand-rose']
 
 interface SongCardProps {

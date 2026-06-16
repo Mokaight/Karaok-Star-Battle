@@ -33,7 +33,7 @@ export async function getLeaderboard(songId: string, limit = 20): Promise<Leader
   // Dédoublonner par user_id, garder le meilleur score
   const best = new Map<string, LeaderboardEntry>()
   for (const row of data) {
-    const p = row.profiles as { username: string; avatar_id: number }
+    const p = (row.profiles as unknown) as { username: string; avatar_id: number }
     if (!best.has(row.user_id)) {
       best.set(row.user_id, {
         rank: 0,
