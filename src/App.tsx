@@ -2,13 +2,14 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
 import { RegisterScreen } from '@/screens/Register/RegisterScreen'
+import { SplashScreen } from '@/screens/Splash/SplashScreen'
 import { ROUTES } from '@/config/routes'
 
 function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path={ROUTES.SPLASH} element={<Navigate to={ROUTES.REGISTER} replace />} />
+        <Route path={ROUTES.SPLASH} element={<SplashScreen />} />
         <Route path={ROUTES.REGISTER} element={<RegisterScreen />} />
 
         <Route element={<ProtectedRoute />}>
@@ -17,9 +18,14 @@ function App() {
               Accueil — bientôt disponible
             </div>
           } />
+          <Route path={ROUTES.MY_PROFILE} element={
+            <div className="flex items-center justify-center h-screen font-display text-2xl text-brand-violet">
+              Mon profil — bientôt disponible
+            </div>
+          } />
         </Route>
 
-        <Route path="*" element={<Navigate to={ROUTES.REGISTER} replace />} />
+        <Route path="*" element={<Navigate to={ROUTES.SPLASH} replace />} />
       </Routes>
     </AuthProvider>
   )
