@@ -17,7 +17,7 @@ export function ResultScreen() {
   const { amplitudeHistory, clearSession } = useAudioStore()
   const profile = useAuthStore((s) => s.profile)
   const { calculate } = useScoreCalculator()
-  const [score, setScore] = useState(0)
+  const [_score, setScore] = useState(0)
   const [stars, setStars] = useState<1|2|3|4|5>(1)
   const [displayScore, setDisplayScore] = useState(0)
 

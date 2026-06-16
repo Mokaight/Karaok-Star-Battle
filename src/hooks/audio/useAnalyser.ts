@@ -10,7 +10,7 @@ export function useAnalyser({ onAmplitude }: UseAnalyserOptions = {}) {
   const analyserRef = useRef<AnalyserNode | null>(null)
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
   const rafRef = useRef<number>(0)
-  const dataArrayRef = useRef<Uint8Array | null>(null)
+  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null)
 
   const connect = useCallback((stream: MediaStream) => {
     const context = new AudioContext()
@@ -25,7 +25,7 @@ export function useAnalyser({ onAmplitude }: UseAnalyserOptions = {}) {
     source.connect(analyser)
     sourceRef.current = source
 
-    dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount)
+    dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount) as Uint8Array<ArrayBuffer>
 
     const tick = () => {
       if (!analyserRef.current || !dataArrayRef.current) return
@@ -55,7 +55,7 @@ export function useAnalyser({ onAmplitude }: UseAnalyserOptions = {}) {
     analyserRef.current = null
   }, [])
 
-  const getFrequencyData = useCallback((): Uint8Array | null => {
+  const getFrequencyData = useCallback((): Uint8Array<ArrayBuffer> | null => {
     if (!analyserRef.current || !dataArrayRef.current) return null
     analyserRef.current.getByteFrequencyData(dataArrayRef.current)
     return dataArrayRef.current
