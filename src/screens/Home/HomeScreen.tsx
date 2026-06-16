@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/shared/AppShell'
+import { PageTransition } from '@/components/shared/PageTransition'
 import { SongCard } from '@/components/shared/SongCard'
 import { AvatarDisplay } from '@/components/shared/AvatarDisplay'
 import { useSongs } from '@/hooks/useSongs'
@@ -13,6 +14,7 @@ export function HomeScreen() {
   const { songs, isLoaded } = useSongs()
 
   return (
+    <PageTransition>
     <AppShell>
       <div className="flex flex-col h-full pb-20">
         {/* Header */}
@@ -65,5 +67,6 @@ export function HomeScreen() {
         </div>
       </div>
     </AppShell>
+    </PageTransition>
   )
 }

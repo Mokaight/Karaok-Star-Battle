@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/shared/AppShell'
+import { PageTransition } from '@/components/shared/PageTransition'
 import { BackButton } from '@/components/shared/BackButton'
 import { AvatarDisplay } from '@/components/shared/AvatarDisplay'
 import { StarRating } from '@/components/shared/StarRating'
@@ -51,6 +52,7 @@ export function PlayerProfileScreen() {
   }
 
   return (
+    <PageTransition>
     <AppShell>
       <div className="flex flex-col h-full pb-20">
         {/* Header */}
@@ -95,5 +97,6 @@ export function PlayerProfileScreen() {
         </div>
       </div>
     </AppShell>
+    </PageTransition>
   )
 }

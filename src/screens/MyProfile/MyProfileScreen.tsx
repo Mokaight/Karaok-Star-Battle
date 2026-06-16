@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/shared/AppShell'
+import { PageTransition } from '@/components/shared/PageTransition'
 import { AvatarDisplay } from '@/components/shared/AvatarDisplay'
 import { StarRating } from '@/components/shared/StarRating'
 import { useAuthStore } from '@/stores/authStore'
@@ -37,6 +38,7 @@ export function MyProfileScreen() {
   if (!profile) return null
 
   return (
+    <PageTransition>
     <AppShell>
       <div className="flex flex-col h-full pb-20">
         {/* Header */}
@@ -93,5 +95,6 @@ export function MyProfileScreen() {
         </div>
       </div>
     </AppShell>
+    </PageTransition>
   )
 }

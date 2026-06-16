@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { ROUTES } from '@/config/routes'
 import { cn } from '@/lib/utils'
 
@@ -31,7 +32,10 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-brand-violet/10 pb-safe">
+    <motion.nav
+      layout
+      className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-brand-violet/10 pb-safe"
+    >
       <div className="flex items-center justify-around py-2">
         {NAV_ITEMS.map(({ label, icon, to }) => {
           const isActive =
@@ -60,12 +64,16 @@ export function BottomNav() {
                 {label}
               </span>
               {isActive && (
-                <div className="w-1 h-1 rounded-full bg-brand-violet" />
+                <motion.div
+                  layoutId="nav-indicator"
+                  className="w-1 h-1 rounded-full bg-brand-violet"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
               )}
             </NavLink>
           )
         })}
       </div>
-    </nav>
+    </motion.nav>
   )
 }

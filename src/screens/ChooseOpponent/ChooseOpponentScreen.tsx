@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/shared/AppShell'
+import { PageTransition } from '@/components/shared/PageTransition'
 import { BackButton } from '@/components/shared/BackButton'
 import { GradientButton } from '@/components/shared/GradientButton'
 import { PlayerCard } from '@/components/shared/PlayerCard'
@@ -41,6 +42,7 @@ export function ChooseOpponentScreen() {
   }
 
   return (
+    <PageTransition>
     <AppShell>
       <div className="flex flex-col h-full pb-20">
         <div className="gradient-brand px-5 pt-12 pb-5">
@@ -90,5 +92,6 @@ export function ChooseOpponentScreen() {
         )}
       </div>
     </AppShell>
+    </PageTransition>
   )
 }

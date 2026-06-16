@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/shared/AppShell'
+import { PageTransition } from '@/components/shared/PageTransition'
 import { AvatarDisplay } from '@/components/shared/AvatarDisplay'
 import { StarRating } from '@/components/shared/StarRating'
 import { GradientButton } from '@/components/shared/GradientButton'
@@ -52,6 +53,7 @@ export function DuelResultScreen() {
   const isEgalite = myScore === opScore
 
   return (
+    <PageTransition>
     <AppShell>
       <div className="flex flex-col h-full pb-20">
         {/* Header */}
@@ -122,5 +124,6 @@ export function DuelResultScreen() {
         </div>
       </div>
     </AppShell>
+    </PageTransition>
   )
 }

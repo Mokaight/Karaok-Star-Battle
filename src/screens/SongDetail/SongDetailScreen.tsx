@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/shared/AppShell'
+import { PageTransition } from '@/components/shared/PageTransition'
 import { BackButton } from '@/components/shared/BackButton'
 import { GradientButton } from '@/components/shared/GradientButton'
 import { StarRating } from '@/components/shared/StarRating'
@@ -45,6 +46,7 @@ export function SongDetailScreen() {
   }
 
   return (
+    <PageTransition>
     <AppShell>
       <div className="flex flex-col h-full pb-20">
         {/* Header avec dégradé */}
@@ -105,5 +107,6 @@ export function SongDetailScreen() {
         </div>
       </div>
     </AppShell>
+    </PageTransition>
   )
 }

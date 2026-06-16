@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/shared/AppShell'
+import { PageTransition } from '@/components/shared/PageTransition'
 import { BackButton } from '@/components/shared/BackButton'
 import { PodiumBlock } from '@/components/shared/PodiumBlock'
 import { AvatarDisplay } from '@/components/shared/AvatarDisplay'
@@ -33,6 +34,7 @@ export function LeaderboardScreen() {
   const rest = entries.slice(3)
 
   return (
+    <PageTransition>
     <AppShell>
       <div className="flex flex-col h-full pb-20">
         {/* Header */}
@@ -103,5 +105,6 @@ export function LeaderboardScreen() {
         </div>
       </div>
     </AppShell>
+    </PageTransition>
   )
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/shared/AppShell'
+import { PageTransition } from '@/components/shared/PageTransition'
 import { StarRating } from '@/components/shared/StarRating'
 import { GradientButton } from '@/components/shared/GradientButton'
 import { useAudioStore } from '@/stores/audioStore'
@@ -65,6 +66,7 @@ export function ResultScreen() {
   const msg = getMessage()
 
   return (
+    <PageTransition>
     <AppShell>
       <div className="flex flex-col h-full items-center justify-center px-6 gap-6 pb-20">
         <motion.h1
@@ -114,5 +116,6 @@ export function ResultScreen() {
         </div>
       </div>
     </AppShell>
+    </PageTransition>
   )
 }
