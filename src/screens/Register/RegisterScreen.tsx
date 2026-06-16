@@ -28,14 +28,17 @@ export function RegisterScreen() {
       const profile = await registerUser(username.trim(), avatarId)
       setProfile(profile)
       navigate(ROUTES.HOME)
-    } catch {
+    } catch (registerErr) {
+      console.error('[Register] registerUser failed:', registerErr)
       // Si le pseudo existe déjà, on tente une connexion
       try {
         const profile = await loginUser(username.trim())
         setProfile(profile)
         navigate(ROUTES.HOME)
-      } catch {
-        setError('Ce pseudo est déjà pris ou une erreur est survenue')
+      } catch (loginErr) {
+        console.error('[Register] loginUser failed:', loginErr)
+        const msg = registerErr instanceof Error ? registerErr.message : 'Erreur inconnue'
+        setError(`Erreur : ${msg}`)
       }
     } finally {
       setIsLoading(false)
