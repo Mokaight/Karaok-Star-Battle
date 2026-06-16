@@ -1,73 +1,69 @@
-# React + TypeScript + Vite
+# Karaok Star Battle
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PWA karaoké multijoueur pour enfants — chante, score, défie tes amis.
 
-Currently, two official plugins are available:
+## Prérequis
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 18+
+- Un projet [Supabase](https://supabase.com) (gratuit)
 
-## React Compiler
+## Installation locale
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+# 1. Cloner le projet
+git clone https://github.com/mokaight/karaok-star-battle.git
+cd karaok-star-battle
 
-## Expanding the ESLint configuration
+# 2. Installer les dépendances
+npm install
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+# 3. Configurer les variables d'environnement
+cp .env.example .env.local
+# Éditer .env.local avec tes clés Supabase (voir ci-dessous)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 4. Lancer le serveur de développement
+npm run dev
+# → http://localhost:8080
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Configuration Supabase
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. Créer un projet sur https://supabase.com (gratuit)
+2. Aller dans **Settings > API** et copier :
+   - **Project URL** → `VITE_SUPABASE_URL`
+   - **anon public** key → `VITE_SUPABASE_ANON_KEY`
+3. Aller dans **SQL Editor** et exécuter dans l'ordre :
+   - `supabase/migrations/001_initial_schema.sql`
+   - `supabase/migrations/002_seed_songs.sql`
+4. Dans **Storage**, le bucket `songs` est créé automatiquement par la migration
+5. Uploader les fichiers MP3 dans le bucket `songs`
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Variables d'environnement
+
+```env
+VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
+
+## Scripts disponibles
+
+```bash
+npm run dev      # Développement → localhost:8080
+npm run build    # Build production
+npm run preview  # Prévisualiser le build
+```
+
+## Stack technique
+
+- React 18 + Vite + TypeScript
+- Tailwind CSS + shadcn/ui + Framer Motion
+- Supabase (Auth + PostgreSQL + Storage)
+- React Router v6 + Zustand
+- PWA (installable sans store)
+
+## Installer l'app sur mobile (via réseau local)
+
+1. Lancer `npm run dev` — Vite affiche l'adresse réseau (ex: `http://192.168.x.x:8080`)
+2. Ouvrir cette adresse sur le mobile (même réseau Wi-Fi)
+3. **iOS** : partager → "Sur l'écran d'accueil"
+4. **Android** : menu → "Ajouter à l'écran d'accueil"
