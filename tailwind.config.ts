@@ -28,9 +28,13 @@ const config: Config = {
       boxShadow: {
         soft: '0 4px 20px rgba(201, 168, 224, 0.25)',
         glow: '0 0 20px rgba(201, 168, 224, 0.4)',
-      }
+      },
+      screens: {
+        'xs': '390px',
+      },
     }
   },
+  safelist: ['pb-safe', 'pt-safe'],
   plugins: []
 }
 
