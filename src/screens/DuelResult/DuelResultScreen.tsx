@@ -11,14 +11,14 @@ import { useDuelStore } from '@/stores/duelStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useScoreCalculator } from '@/hooks/audio/useScoreCalculator'
 import { submitScore } from '@/services/scores.service'
-import { completeDuel } from '@/services/duels.service'
+import { completeDuel, respondToDuel } from '@/services/duels.service'
 import { ROUTES, songRoute } from '@/config/routes'
 
 export function DuelResultScreen() {
   const { songId } = useParams<{ songId: string }>()
   const navigate = useNavigate()
   const { amplitudeHistory, clearSession } = useAudioStore()
-  const { duelId, opponentProfile, opponentBestScore, opponentBestStars, clearDuel } = useDuelStore()
+  const { duelId, isResponding, opponentProfile, opponentBestScore, opponentBestStars, clearDuel } = useDuelStore()
   const profile = useAuthStore((s) => s.profile)
   const { calculate } = useScoreCalculator()
   const [myScore, setMyScore] = useState(0)
@@ -35,7 +35,11 @@ export function DuelResultScreen() {
       try {
         const score = await submitScore(songId, result.score, result.stars, true)
         if (duelId) {
-          await completeDuel(duelId, score.id)
+          if (isResponding) {
+            await respondToDuel(duelId, score.id)
+          } else {
+            await completeDuel(duelId, score.id)
+          }
         }
       } catch (e) {
         console.error(e)
@@ -113,7 +117,7 @@ export function DuelResultScreen() {
             <div className="flex-1">
               <p className="font-semibold text-brand-text">{opponentProfile?.username ?? 'Adversaire'}</p>
               <StarRating stars={opStars} size="sm" />
-              <p className="text-xs text-brand-muted font-sans">Meilleur score</p>
+              <p className="text-xs text-brand-muted font-sans">{isResponding ? 'Score du défi' : 'Meilleur score'}</p>
             </div>
             <span className="font-display text-4xl text-brand-text">{opScore}</span>
           </motion.div>

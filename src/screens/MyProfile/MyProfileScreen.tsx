@@ -7,6 +7,8 @@ import { AvatarDisplay } from '@/components/shared/AvatarDisplay'
 import { StarRating } from '@/components/shared/StarRating'
 import { useAuthStore } from '@/stores/authStore'
 import { logoutUser } from '@/services/auth.service'
+import { getDuelHistory } from '@/services/duels.service'
+import type { HistoryDuel } from '@/services/duels.service'
 import { supabase } from '@/config/supabase'
 import { ROUTES, songRoute } from '@/config/routes'
 import type { Score, Song } from '@/types'
@@ -16,6 +18,7 @@ export function MyProfileScreen() {
   const { profile, signOut } = useAuthStore()
   const [scores, setScores] = useState<(Score & { song: Song })[]>([])
   const [uniqueSongCount, setUniqueSongCount] = useState(0)
+  const [duelHistory, setDuelHistory] = useState<HistoryDuel[]>([])
 
   useEffect(() => {
     if (!profile) return
@@ -35,6 +38,7 @@ export function MyProfileScreen() {
       .then(({ data }) => {
         setUniqueSongCount(new Set((data ?? []).map((d: any) => d.song_id)).size)
       })
+    getDuelHistory(profile.id).then(setDuelHistory)
   }, [profile])
 
   const handleLogout = async () => {
@@ -91,6 +95,40 @@ export function MyProfileScreen() {
                   <span className="text-brand-muted text-sm flex-shrink-0">›</span>
                 </motion.button>
               ))}
+            </div>
+          )}
+
+          {duelHistory.length > 0 && (
+            <div className="pt-6">
+              <h2 className="font-display text-lg text-brand-text mb-3">Historique des duels</h2>
+              <div className="flex flex-col gap-2">
+                {duelHistory.map((duel, i) => {
+                  const won = duel.myScore !== null && duel.theirScore !== null && duel.myScore > duel.theirScore
+                  const lost = duel.myScore !== null && duel.theirScore !== null && duel.myScore < duel.theirScore
+                  return (
+                    <motion.div
+                      key={duel.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="bg-white rounded-2xl p-3 shadow-soft flex items-center gap-3"
+                    >
+                      <span className="text-xl">{won ? '🏆' : lost ? '😅' : '🤝'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-brand-text text-sm truncate">
+                          {duel.song?.title ?? '—'}
+                        </p>
+                        <p className="text-xs text-brand-muted">{duel.song?.artist ?? '—'}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <span className="font-display text-brand-text text-lg">{duel.myScore ?? '—'}</span>
+                        <span className="text-brand-muted text-xs"> vs </span>
+                        <span className="font-display text-brand-muted text-lg">{duel.theirScore ?? '—'}</span>
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
             </div>
           )}
 

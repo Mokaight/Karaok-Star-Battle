@@ -12,6 +12,7 @@ export const ROUTES = {
   LEADERBOARD:       '/chansons/:songId/classement',
   PLAYER_PROFILE:    '/joueurs/:playerId',
   MY_PROFILE:        '/mon-profil',
+  DUEL_INBOX:        '/mes-defis',
 } as const
 
 export type RoutePath = typeof ROUTES[keyof typeof ROUTES]

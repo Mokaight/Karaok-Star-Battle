@@ -15,6 +15,7 @@ import { DuelResultScreen } from '@/screens/DuelResult/DuelResultScreen'
 import { LeaderboardScreen } from '@/screens/Leaderboard/LeaderboardScreen'
 import { PlayerProfileScreen } from '@/screens/PlayerProfile/PlayerProfileScreen'
 import { MyProfileScreen } from '@/screens/MyProfile/MyProfileScreen'
+import { DuelInboxScreen } from '@/screens/DuelInbox/DuelInboxScreen'
 import { ROUTES } from '@/config/routes'
 
 function AnimatedRoutes() {
@@ -40,6 +41,7 @@ function AnimatedRoutes() {
           <Route path={ROUTES.LEADERBOARD}     element={<LeaderboardScreen />} />
           <Route path={ROUTES.PLAYER_PROFILE}  element={<PlayerProfileScreen />} />
           <Route path={ROUTES.MY_PROFILE}      element={<MyProfileScreen />} />
+          <Route path={ROUTES.DUEL_INBOX}      element={<DuelInboxScreen />} />
         </Route>
 
         <Route path="*" element={<Navigate to={ROUTES.SPLASH} replace />} />
