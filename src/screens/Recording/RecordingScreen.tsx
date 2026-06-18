@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAudioEngine } from '@/hooks/audio/useAudioEngine'
@@ -6,6 +6,7 @@ import { useAudioStore } from '@/stores/audioStore'
 import { useDuelStore } from '@/stores/duelStore'
 import { getSongById } from '@/services/songs.service'
 import { fetchLyrics } from '@/services/lyrics.service'
+import type { LyricsResult } from '@/services/lyrics.service'
 import { ROUTES, songRoute } from '@/config/routes'
 import type { Song } from '@/types'
 
@@ -18,15 +19,15 @@ export function RecordingScreen() {
   const [song, setSong] = useState<Song | null>(null)
   const [progress, setProgress] = useState(0)
   const [confirmAbandon, setConfirmAbandon] = useState(false)
-  const [lyrics, setLyrics] = useState<string | null | undefined>(undefined)
+  const [lyrics, setLyrics] = useState<LyricsResult | null | undefined>(undefined)
+  const [currentLineIdx, setCurrentLineIdx] = useState(0)
+  const lyricsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!songId) return
     getSongById(songId).then((s) => {
       setSong(s)
-      if (s) {
-        fetchLyrics(s.artist, s.title).then(setLyrics)
-      }
+      if (s) fetchLyrics(s.artist, s.title).then(setLyrics)
     })
   }, [songId])
 
@@ -53,12 +54,23 @@ export function RecordingScreen() {
     if (!isStarted) return
     const interval = setInterval(() => {
       const duration = getDuration()
-      if (duration > 0) {
-        setProgress(getCurrentTime() / duration)
+      const current = getCurrentTime()
+      if (duration > 0) setProgress(current / duration)
+      // Mise à jour ligne courante pour paroles synchronisées
+      if (lyrics?.synced) {
+        const idx = lyrics.synced.reduce((acc, l, i) => (l.time <= current ? i : acc), 0)
+        setCurrentLineIdx(idx)
       }
-    }, 500)
+    }, 250)
     return () => clearInterval(interval)
-  }, [isStarted, getCurrentTime, getDuration])
+  }, [isStarted, getCurrentTime, getDuration, lyrics])
+
+  // Auto-scroll vers la ligne courante
+  useEffect(() => {
+    if (!lyricsRef.current) return
+    const active = lyricsRef.current.querySelector<HTMLElement>('[data-active="true"]')
+    active?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [currentLineIdx])
 
   const handleAbandon = () => {
     cleanup()
@@ -90,7 +102,7 @@ export function RecordingScreen() {
         </div>
       </div>
 
-      {/* YouTube player — visible, wrapper fixe le sizing (le div interne est remplacé par l'iframe) */}
+      {/* YouTube player — visible, wrapper conserve les dimensions quand YouTube remplace le div */}
       <div className="px-4 flex-shrink-0">
         <div className="w-full rounded-2xl overflow-hidden bg-black relative" style={{ aspectRatio: '16/9' }}>
           <div
@@ -138,29 +150,45 @@ export function RecordingScreen() {
               ref={canvasRef}
               width={340}
               height={48}
-              className="w-full rounded-xl bg-white/5 flex-shrink-0"
+              className="w-full rounded-xl bg-white/5 flex-shrink-0 mb-3"
             />
 
             {/* Paroles */}
-            {typeof lyrics === 'string' ? (
-              <div className="flex-1 overflow-y-auto no-scrollbar mt-3 min-h-0">
-                <p className="text-white/75 text-sm font-sans leading-7 whitespace-pre-wrap pb-4">
-                  {lyrics}
-                </p>
-              </div>
-            ) : lyrics === null ? (
-              <div className="flex-1 flex items-center justify-center">
-                <p className="text-white/30 text-xs font-sans text-center">
-                  Paroles non disponibles
-                </p>
-              </div>
-            ) : (
+            {lyrics === undefined ? (
               <div className="flex-1 flex items-center justify-center">
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
                   className="w-5 h-5 border-2 border-white/20 border-t-white/50 rounded-full"
                 />
+              </div>
+            ) : lyrics === null ? (
+              <div className="flex-1 flex items-center justify-center">
+                <p className="text-white/30 text-xs font-sans text-center">Paroles non disponibles</p>
+              </div>
+            ) : lyrics.synced ? (
+              <div ref={lyricsRef} className="flex-1 overflow-y-auto no-scrollbar min-h-0">
+                {lyrics.synced.map((line, i) => (
+                  <p
+                    key={i}
+                    data-active={i === currentLineIdx}
+                    className={`font-sans leading-8 text-center transition-all duration-300 ${
+                      i === currentLineIdx
+                        ? 'text-white text-base font-semibold'
+                        : Math.abs(i - currentLineIdx) <= 2
+                        ? 'text-white/50 text-sm'
+                        : 'text-white/20 text-sm'
+                    }`}
+                  >
+                    {line.text}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto no-scrollbar min-h-0">
+                <p className="text-white/75 text-sm font-sans leading-7 whitespace-pre-wrap pb-4">
+                  {lyrics.plain}
+                </p>
               </div>
             )}
           </>
