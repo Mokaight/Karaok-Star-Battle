@@ -47,11 +47,8 @@ export function RecordingScreen() {
     requestPermission()
   }, [requestPermission])
 
-  useEffect(() => {
-    if (ytReady && song && !isStarted) {
-      start()
-    }
-  }, [ytReady, song, isStarted, start])
+  // Pas d'auto-start : Firefox et iOS Safari bloquent l'audio sans geste utilisateur direct
+  const isReadyToStart = ytReady && song !== null && !isStarted
 
   // Progression basée sur la durée réelle du player YouTube
   useEffect(() => {
@@ -105,6 +102,19 @@ export function RecordingScreen() {
           <div className="flex-1 flex items-center justify-center">
             {micError ? (
               <p className="text-red-400 font-sans text-sm text-center">{micError}</p>
+            ) : isReadyToStart ? (
+              <motion.button
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                whileTap={{ scale: 0.93 }}
+                onClick={start}
+                className="flex flex-col items-center gap-4"
+              >
+                <div className="w-28 h-28 rounded-full gradient-brand flex items-center justify-center text-6xl shadow-lg">
+                  🎤
+                </div>
+                <p className="text-white font-display text-xl">Appuyer pour chanter</p>
+              </motion.button>
             ) : (
               <div className="text-center">
                 <motion.div
@@ -112,7 +122,7 @@ export function RecordingScreen() {
                   transition={{ repeat: Infinity, duration: 1 }}
                   className="text-6xl mb-3"
                 >
-                  🎤
+                  🎵
                 </motion.div>
                 <p className="text-white/50 text-sm font-sans">Chargement...</p>
               </div>
