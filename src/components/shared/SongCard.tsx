@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ROUTES, songRoute } from '@/config/routes'
 import { formatDuration } from '@/lib/formatters'
+import { getYouTubeThumbnail } from '@/services/songs.service'
 import { cn } from '@/lib/utils'
 import type { Song } from '@/types'
 
@@ -36,10 +37,14 @@ export function SongCard({ song, index }: SongCardProps) {
         gradient
       )}
     >
-      {/* Pochette / couleur */}
-      <div className="w-14 h-14 rounded-2xl bg-white/60 flex items-center justify-center flex-shrink-0 text-2xl shadow-sm">
-        {song.cover_url ? (
-          <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover rounded-2xl" />
+      {/* Pochette / thumbnail YouTube */}
+      <div className="w-14 h-14 rounded-2xl bg-white/60 flex items-center justify-center flex-shrink-0 text-2xl shadow-sm overflow-hidden">
+        {song.cover_url || song.youtube_video_id ? (
+          <img
+            src={song.cover_url ?? getYouTubeThumbnail(song.youtube_video_id)}
+            alt={song.title}
+            className="w-full h-full object-cover"
+          />
         ) : (
           '🎵'
         )}

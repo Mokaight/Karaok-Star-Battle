@@ -18,7 +18,7 @@ export function ResultScreen() {
   const { amplitudeHistory, clearSession } = useAudioStore()
   const profile = useAuthStore((s) => s.profile)
   const { calculate } = useScoreCalculator()
-  const [_score, setScore] = useState(0)
+  const [score, setScore] = useState(0)
   const [stars, setStars] = useState<1|2|3|4|5>(1)
   const [displayScore, setDisplayScore] = useState(0)
 
@@ -30,13 +30,16 @@ export function ResultScreen() {
     if (state?.score !== undefined) {
       finalScore = state.score
       finalStars = (state.stars ?? 1) as 1|2|3|4|5
-    } else {
+    } else if (amplitudeHistory.length > 0) {
       const result = calculate(amplitudeHistory)
       finalScore = result.score
       finalStars = result.stars
       if (songId && profile) {
         submitScore(songId, finalScore, finalStars, false).catch(console.error)
       }
+    } else {
+      navigate(ROUTES.HOME, { replace: true })
+      return
     }
 
     setScore(finalScore)

@@ -7,6 +7,7 @@ import { BackButton } from '@/components/shared/BackButton'
 import { GradientButton } from '@/components/shared/GradientButton'
 import { PlayerCard } from '@/components/shared/PlayerCard'
 import { getPlayersWithScore } from '@/services/players.service'
+import { createDuel } from '@/services/duels.service'
 import { useAuthStore } from '@/stores/authStore'
 import { useDuelStore } from '@/stores/duelStore'
 import { ROUTES, songRoute } from '@/config/routes'
@@ -16,26 +17,41 @@ export function ChooseOpponentScreen() {
   const { songId } = useParams<{ songId: string }>()
   const navigate = useNavigate()
   const profile = useAuthStore((s) => s.profile)
-  const { setOpponent } = useDuelStore()
+  const { setOpponent, setDuelId } = useDuelStore()
   const [players, setPlayers] = useState<PlayerWithScore[]>([])
   const [selected, setSelected] = useState<PlayerWithScore | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [isChallenging, setIsChallenging] = useState(false)
 
-  useEffect(() => {
+  const load = () => {
     if (!songId || !profile) return
-    getPlayersWithScore(songId, profile.id).then((p) => {
-      setPlayers(p)
-      setIsLoading(false)
-    })
-  }, [songId, profile])
+    setError(false)
+    setIsLoading(true)
+    getPlayersWithScore(songId, profile.id)
+      .then((p) => { setPlayers(p); setIsLoading(false) })
+      .catch(() => { setError(true); setIsLoading(false) })
+  }
 
-  const handleChallenge = () => {
-    if (!selected) return
+  useEffect(load, [songId, profile])
+
+  const handleChallenge = async () => {
+    if (!selected || !profile || !songId) return
+    setIsChallenging(true)
+
     setOpponent(
       { id: selected.id, username: selected.username, avatar_id: selected.avatar_id, created_at: '', updated_at: '' },
       selected.best_score ?? 0,
       (selected.best_stars ?? 1) as 1|2|3|4|5
     )
+
+    try {
+      const duel = await createDuel(profile.id, selected.id, songId)
+      setDuelId(duel.id)
+    } catch {
+      // On continue même si la persistance Supabase échoue
+    }
+
     navigate(songRoute(ROUTES.COUNTDOWN, songId!), {
       state: { mode: 'duel', songId, opponentId: selected.id }
     })
@@ -57,6 +73,14 @@ export function ChooseOpponentScreen() {
           {isLoading ? (
             <div className="flex flex-col gap-3">
               {[1,2,3].map(i => <div key={i} className="h-16 rounded-2xl bg-brand-violet/10 animate-pulse" />)}
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-brand-muted">
+              <p className="text-4xl mb-3">⚠️</p>
+              <p className="mb-4">Impossible de charger les joueurs</p>
+              <button onClick={load} className="px-6 py-2 rounded-full bg-brand-violet/20 text-brand-violet font-semibold text-sm">
+                Réessayer
+              </button>
             </div>
           ) : players.length === 0 ? (
             <div className="text-center py-12 text-brand-muted">
@@ -85,8 +109,8 @@ export function ChooseOpponentScreen() {
 
         {selected && (
           <div className="px-5 pb-8">
-            <GradientButton onClick={handleChallenge}>
-              ⚔️ Défier {selected.username}
+            <GradientButton onClick={handleChallenge} disabled={isChallenging}>
+              {isChallenging ? 'Préparation du duel...' : `⚔️ Défier ${selected.username}`}
             </GradientButton>
           </div>
         )}

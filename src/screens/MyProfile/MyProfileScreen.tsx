@@ -8,13 +8,14 @@ import { StarRating } from '@/components/shared/StarRating'
 import { useAuthStore } from '@/stores/authStore'
 import { logoutUser } from '@/services/auth.service'
 import { supabase } from '@/config/supabase'
-import { ROUTES } from '@/config/routes'
+import { ROUTES, songRoute } from '@/config/routes'
 import type { Score, Song } from '@/types'
 
 export function MyProfileScreen() {
   const navigate = useNavigate()
   const { profile, signOut } = useAuthStore()
   const [scores, setScores] = useState<(Score & { song: Song })[]>([])
+  const [uniqueSongCount, setUniqueSongCount] = useState(0)
 
   useEffect(() => {
     if (!profile) return
@@ -26,6 +27,13 @@ export function MyProfileScreen() {
       .limit(10)
       .then(({ data }) => {
         setScores((data ?? []).map((s: any) => ({ ...s, song: s.songs })))
+      })
+    supabase
+      .from('scores')
+      .select('song_id')
+      .eq('user_id', profile.id)
+      .then(({ data }) => {
+        setUniqueSongCount(new Set((data ?? []).map((d: any) => d.song_id)).size)
       })
   }, [profile])
 
@@ -45,7 +53,7 @@ export function MyProfileScreen() {
         <div className="gradient-brand px-5 pt-12 pb-8 text-center">
           <AvatarDisplay avatarId={profile.avatar_id} size="xl" className="mx-auto mb-3" />
           <h1 className="font-display text-white text-2xl">{profile.username}</h1>
-          <p className="text-white/70 text-sm font-sans mt-1">{scores.length} chanson{scores.length > 1 ? 's' : ''} chantée{scores.length > 1 ? 's' : ''}</p>
+          <p className="text-white/70 text-sm font-sans mt-1">{uniqueSongCount} chanson{uniqueSongCount > 1 ? 's' : ''} chantée{uniqueSongCount > 1 ? 's' : ''}</p>
         </div>
 
         {/* Contenu */}
@@ -66,20 +74,22 @@ export function MyProfileScreen() {
           ) : (
             <div className="flex flex-col gap-2">
               {scores.map((score, i) => (
-                <motion.div
+                <motion.button
                   key={score.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="bg-white rounded-2xl p-3 shadow-soft flex items-center gap-3"
+                  onClick={() => navigate(songRoute(ROUTES.SONG_DETAIL, score.song_id))}
+                  className="w-full bg-white rounded-2xl p-3 shadow-soft flex items-center gap-3 text-left active:scale-98 transition-transform"
                 >
                   <div className="text-2xl">🎵</div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-brand-text text-sm">{score.song?.title ?? '—'}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-brand-text text-sm truncate">{score.song?.title ?? '—'}</p>
                     <StarRating stars={score.stars as 1|2|3|4|5} size="sm" />
                   </div>
-                  <span className="font-display text-brand-text text-xl">{score.score}</span>
-                </motion.div>
+                  <span className="font-display text-brand-text text-xl flex-shrink-0">{score.score}</span>
+                  <span className="text-brand-muted text-sm flex-shrink-0">›</span>
+                </motion.button>
               ))}
             </div>
           )}

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/stores/authStore'
@@ -7,13 +7,19 @@ import { ROUTES } from '@/config/routes'
 export function SplashScreen() {
   const navigate = useNavigate()
   const profile = useAuthStore((s) => s.profile)
+  const isLoading = useAuthStore((s) => s.isLoading)
+  const [timerDone, setTimerDone] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigate(profile ? ROUTES.HOME : ROUTES.REGISTER, { replace: true })
-    }, 2500)
+    const timer = setTimeout(() => setTimerDone(true), 2500)
     return () => clearTimeout(timer)
-  }, [profile, navigate])
+  }, [])
+
+  useEffect(() => {
+    if (timerDone && !isLoading) {
+      navigate(profile ? ROUTES.HOME : ROUTES.REGISTER, { replace: true })
+    }
+  }, [timerDone, isLoading, profile, navigate])
 
   return (
     <div className="fixed inset-0 flex items-center justify-center gradient-brand">

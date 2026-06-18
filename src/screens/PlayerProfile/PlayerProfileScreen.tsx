@@ -7,8 +7,8 @@ import { BackButton } from '@/components/shared/BackButton'
 import { AvatarDisplay } from '@/components/shared/AvatarDisplay'
 import { StarRating } from '@/components/shared/StarRating'
 import { GradientButton } from '@/components/shared/GradientButton'
-import { supabase } from '@/config/supabase'
-import { ROUTES } from '@/config/routes'
+import { getPlayerProfile, getPlayerScores } from '@/services/players.service'
+import { ROUTES, songRoute } from '@/config/routes'
 import type { Profile, Score, Song } from '@/types'
 
 export function PlayerProfileScreen() {
@@ -21,11 +21,11 @@ export function PlayerProfileScreen() {
   useEffect(() => {
     if (!playerId) return
     Promise.all([
-      supabase.from('profiles').select('*').eq('id', playerId).single(),
-      supabase.from('scores').select('*, songs(*)').eq('user_id', playerId).order('score', { ascending: false }).limit(10),
-    ]).then(([profileRes, scoresRes]) => {
-      setPlayerProfile(profileRes.data)
-      setScores((scoresRes.data ?? []).map((s: any) => ({ ...s, song: s.songs })))
+      getPlayerProfile(playerId),
+      getPlayerScores(playerId),
+    ]).then(([profile, playerScores]) => {
+      setPlayerProfile(profile)
+      setScores(playerScores)
       setIsLoading(false)
     })
   }, [playerId])
@@ -71,26 +71,28 @@ export function PlayerProfileScreen() {
           ) : (
             <div className="flex flex-col gap-2">
               {scores.map((score, i) => (
-                <motion.div
+                <motion.button
                   key={score.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="bg-white rounded-2xl p-3 shadow-soft flex items-center gap-3"
+                  onClick={() => navigate(songRoute(ROUTES.SONG_DETAIL, score.song_id))}
+                  className="w-full bg-white rounded-2xl p-3 shadow-soft flex items-center gap-3 text-left active:scale-98 transition-transform"
                 >
                   <div className="text-2xl">🎵</div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-brand-text text-sm">{score.song?.title ?? '—'}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-brand-text text-sm truncate">{score.song?.title ?? '—'}</p>
                     <StarRating stars={score.stars as 1|2|3|4|5} size="sm" />
                   </div>
-                  <span className="font-display text-brand-text text-xl">{score.score}</span>
-                </motion.div>
+                  <span className="font-display text-brand-text text-xl flex-shrink-0">{score.score}</span>
+                  <span className="text-brand-muted text-sm flex-shrink-0">›</span>
+                </motion.button>
               ))}
             </div>
           )}
 
           <div className="pt-4">
-            <GradientButton onClick={() => navigate(ROUTES.HOME)}>
+            <GradientButton onClick={() => navigate(ROUTES.HOME, { state: { challengePlayerId: playerProfile.id } })}>
               ⚔️ Défier ce joueur
             </GradientButton>
           </div>

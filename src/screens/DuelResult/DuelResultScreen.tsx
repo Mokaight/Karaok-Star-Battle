@@ -11,13 +11,14 @@ import { useDuelStore } from '@/stores/duelStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useScoreCalculator } from '@/hooks/audio/useScoreCalculator'
 import { submitScore } from '@/services/scores.service'
+import { completeDuel } from '@/services/duels.service'
 import { ROUTES, songRoute } from '@/config/routes'
 
 export function DuelResultScreen() {
   const { songId } = useParams<{ songId: string }>()
   const navigate = useNavigate()
   const { amplitudeHistory, clearSession } = useAudioStore()
-  const { opponentProfile, opponentBestScore, opponentBestStars, clearDuel } = useDuelStore()
+  const { duelId, opponentProfile, opponentBestScore, opponentBestStars, clearDuel } = useDuelStore()
   const profile = useAuthStore((s) => s.profile)
   const { calculate } = useScoreCalculator()
   const [myScore, setMyScore] = useState(0)
@@ -29,9 +30,18 @@ export function DuelResultScreen() {
     setMyScore(result.score)
     setMyStars(result.stars)
 
-    if (songId && profile) {
-      submitScore(songId, result.score, result.stars, true).catch(console.error)
+    const persist = async () => {
+      if (!songId || !profile) return
+      try {
+        const score = await submitScore(songId, result.score, result.stars, true)
+        if (duelId) {
+          await completeDuel(duelId, score.id)
+        }
+      } catch (e) {
+        console.error(e)
+      }
     }
+    persist()
 
     // Animation count-up
     let current = 0
@@ -43,7 +53,6 @@ export function DuelResultScreen() {
     }, 30)
 
     clearSession()
-    clearDuel()
     return () => clearInterval(interval)
   }, [])
 
@@ -112,11 +121,17 @@ export function DuelResultScreen() {
 
         {/* Actions */}
         <div className="px-5 pb-6 flex flex-col gap-3">
-          <GradientButton onClick={() => navigate(songRoute(ROUTES.LEADERBOARD, songId!))}>
+          <GradientButton onClick={() => { clearDuel(); navigate(songRoute(ROUTES.LEADERBOARD, songId!)) }}>
             🏆 Voir le classement
           </GradientButton>
           <button
-            onClick={() => navigate(ROUTES.HOME)}
+            onClick={() => { clearDuel(); navigate(songRoute(ROUTES.CHOOSE_OPPONENT, songId!)) }}
+            className="w-full py-4 rounded-3xl font-display text-brand-violet bg-white border-2 border-brand-violet/30 active:scale-95 transition-transform"
+          >
+            ⚔️ Rechanter en duel
+          </button>
+          <button
+            onClick={() => { clearDuel(); navigate(ROUTES.HOME) }}
             className="w-full py-3 rounded-3xl font-display text-brand-muted text-sm active:scale-95 transition-transform"
           >
             Accueil

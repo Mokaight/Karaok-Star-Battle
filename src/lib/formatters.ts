@@ -1,5 +1,5 @@
 export function formatScore(score: number): string {
-  return score.toString().padStart(2, '0')
+  return score.toString()
 }
 
 export function formatDuration(seconds: number): string {

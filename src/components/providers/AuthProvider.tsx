@@ -17,15 +17,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isLoading = useAuthStore((s) => s.isLoading)
 
   useEffect(() => {
-    getCurrentProfile().then((p) => {
-      setProfile(p)
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Vérifie d'abord la session Supabase — invalide le cache localStorage si JWT expiré
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         setProfile(null)
         setLoading(false)
+        return
+      }
+      getCurrentProfile().then((p) => {
+        setProfile(p)
+        setLoading(false)
+      })
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        setProfile(null)
+        setLoading(false)
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        getCurrentProfile().then((p) => setProfile(p))
       }
     })
 

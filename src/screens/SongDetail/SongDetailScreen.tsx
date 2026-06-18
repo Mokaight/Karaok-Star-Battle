@@ -22,18 +22,35 @@ export function SongDetailScreen() {
   const [song, setSong] = useState<Song | null>(null)
   const [myBest, setMyBest] = useState<{ score: number; stars: number } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(false)
 
-  useEffect(() => {
+  const load = () => {
     if (!songId) return
+    setError(false)
+    setIsLoading(true)
     Promise.all([
       getSongById(songId),
       profile ? getBestScoreForUser(profile.id, songId) : Promise.resolve(null),
-    ]).then(([s, best]) => {
-      setSong(s)
-      setMyBest(best)
-      setIsLoading(false)
-    })
-  }, [songId, profile])
+    ])
+      .then(([s, best]) => { setSong(s); setMyBest(best); setIsLoading(false) })
+      .catch(() => { setError(true); setIsLoading(false) })
+  }
+
+  useEffect(load, [songId, profile])
+
+  if (error) {
+    return (
+      <AppShell>
+        <div className="flex flex-col items-center justify-center h-full gap-4 text-brand-muted">
+          <p className="text-4xl">⚠️</p>
+          <p>Impossible de charger la chanson</p>
+          <button onClick={load} className="px-6 py-2 rounded-full bg-brand-violet/20 text-brand-violet font-semibold text-sm">
+            Réessayer
+          </button>
+        </div>
+      </AppShell>
+    )
+  }
 
   if (isLoading || !song) {
     return (

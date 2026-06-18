@@ -1,8 +1,9 @@
 import { useEffect, useCallback, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAudioEngine } from '@/hooks/audio/useAudioEngine'
 import { useAudioStore } from '@/stores/audioStore'
+import { useDuelStore } from '@/stores/duelStore'
 import { getSongById } from '@/services/songs.service'
 import { ROUTES, songRoute } from '@/config/routes'
 import type { Song } from '@/types'
@@ -11,8 +12,11 @@ export function RecordingScreen() {
   const { songId } = useParams<{ songId: string }>()
   const navigate = useNavigate()
   const mode = useAudioStore((s) => s.mode)
+  const { clearSession } = useAudioStore()
+  const { clearDuel } = useDuelStore()
   const [song, setSong] = useState<Song | null>(null)
   const [progress, setProgress] = useState(0)
+  const [confirmAbandon, setConfirmAbandon] = useState(false)
 
   useEffect(() => {
     if (songId) getSongById(songId).then(setSong)
@@ -25,32 +29,36 @@ export function RecordingScreen() {
     navigate(nextRoute, { replace: true })
   }, [mode, songId, navigate])
 
-  const { ytContainerRef, canvasRef, ytReady, isStarted, micError, start, forceStop, requestPermission } =
+  const { ytContainerRef, canvasRef, ytReady, isStarted, micError, start, forceStop, cleanup, requestPermission } =
     useAudioEngine({
       videoId: song?.youtube_video_id ?? '',
       onSongEnded: handleSongEnded,
     })
 
-  // Demander permission micro dès l'arrivée sur l'écran
   useEffect(() => {
     requestPermission()
   }, [requestPermission])
 
-  // Lancer automatiquement dès que YouTube est prêt
   useEffect(() => {
     if (ytReady && song && !isStarted) {
       start()
     }
   }, [ytReady, song, isStarted, start])
 
-  // Progression basée sur la durée de la chanson
   useEffect(() => {
-    if (!isStarted || !song) return
+    if (!isStarted || !song || song.duration_sec === 0) return
     const interval = setInterval(() => {
       setProgress((p) => Math.min(1, p + 1 / song.duration_sec))
     }, 1000)
     return () => clearInterval(interval)
   }, [isStarted, song])
+
+  const handleAbandon = () => {
+    cleanup()
+    clearSession()
+    clearDuel()
+    navigate(songRoute(ROUTES.SONG_DETAIL, songId!), { replace: true })
+  }
 
   return (
     <div className="fixed inset-0 bg-brand-text flex flex-col">
@@ -63,6 +71,9 @@ export function RecordingScreen() {
       <div className="px-6 pt-12 pb-4 text-center">
         <p className="text-white/60 text-sm font-sans">{song?.artist}</p>
         <h1 className="font-display text-white text-2xl">{song?.title ?? '...'}</h1>
+        {mode === 'duel' && (
+          <p className="text-brand-rose/80 text-xs font-sans mt-1">⚔️ Mode duel</p>
+        )}
       </div>
 
       {/* Barre de progression */}
@@ -116,8 +127,8 @@ export function RecordingScreen() {
         </div>
       )}
 
-      {/* Bouton stop (mode solo uniquement — en mode duel on laisse la chanson finir) */}
-      <div className="px-6 pb-12">
+      {/* Actions bas d'écran */}
+      <div className="px-6 pb-12 flex flex-col gap-2">
         {mode === 'solo' && isStarted && (
           <button
             onClick={forceStop}
@@ -126,10 +137,43 @@ export function RecordingScreen() {
             ⏹ Terminer
           </button>
         )}
+
         {mode === 'duel' && isStarted && (
-          <p className="text-center text-white/40 text-sm font-sans">
-            Mode duel — chante jusqu'à la fin de la chanson !
-          </p>
+          <AnimatePresence mode="wait">
+            {confirmAbandon ? (
+              <motion.div
+                key="confirm"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                className="flex gap-3"
+              >
+                <button
+                  onClick={handleAbandon}
+                  className="flex-1 py-3 rounded-3xl font-display text-brand-rose border-2 border-brand-rose/60 active:scale-95 transition-transform text-sm"
+                >
+                  Confirmer l'abandon
+                </button>
+                <button
+                  onClick={() => setConfirmAbandon(false)}
+                  className="flex-1 py-3 rounded-3xl font-display text-white/60 border-2 border-white/20 active:scale-95 transition-transform text-sm"
+                >
+                  Continuer
+                </button>
+              </motion.div>
+            ) : (
+              <motion.button
+                key="abandon"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                onClick={() => setConfirmAbandon(true)}
+                className="w-full py-3 rounded-3xl font-display text-white/40 border border-white/15 text-sm active:scale-95 transition-transform"
+              >
+                Abandonner le duel
+              </motion.button>
+            )}
+          </AnimatePresence>
         )}
       </div>
     </div>

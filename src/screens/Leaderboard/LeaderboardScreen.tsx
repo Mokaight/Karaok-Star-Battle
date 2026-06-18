@@ -20,15 +20,18 @@ export function LeaderboardScreen() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [song, setSong] = useState<Song | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(false)
 
-  useEffect(() => {
+  const load = () => {
     if (!songId) return
-    Promise.all([getLeaderboard(songId), getSongById(songId)]).then(([lb, s]) => {
-      setEntries(lb)
-      setSong(s)
-      setIsLoading(false)
-    })
-  }, [songId])
+    setError(false)
+    setIsLoading(true)
+    Promise.all([getLeaderboard(songId), getSongById(songId)])
+      .then(([lb, s]) => { setEntries(lb); setSong(s); setIsLoading(false) })
+      .catch(() => { setError(true); setIsLoading(false) })
+  }
+
+  useEffect(load, [songId])
 
   const top3 = entries.slice(0, 3)
   const rest = entries.slice(3)
@@ -53,6 +56,14 @@ export function LeaderboardScreen() {
           {isLoading ? (
             <div className="flex justify-center py-12">
               <div className="font-display text-3xl animate-pulse text-brand-violet">🏆</div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-brand-muted">
+              <p className="text-4xl mb-3">⚠️</p>
+              <p className="mb-4">Impossible de charger le classement</p>
+              <button onClick={load} className="px-6 py-2 rounded-full bg-brand-violet/20 text-brand-violet font-semibold text-sm">
+                Réessayer
+              </button>
             </div>
           ) : entries.length === 0 ? (
             <div className="text-center py-12 text-brand-muted">

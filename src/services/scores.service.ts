@@ -26,7 +26,7 @@ export async function getLeaderboard(songId: string, limit = 20): Promise<Leader
     .select('score, stars, user_id, profiles!inner(username, avatar_id)')
     .eq('song_id', songId)
     .order('score', { ascending: false })
-    .limit(limit * 3)
+    .limit(limit * 20)
 
   if (error || !data) return []
 
@@ -50,6 +50,28 @@ export async function getLeaderboard(songId: string, limit = 20): Promise<Leader
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((entry, i) => ({ ...entry, rank: i + 1 }))
+}
+
+export async function getRecentSongsForUser(userId: string, limit = 10): Promise<import('@/types').Song[]> {
+  const { data } = await supabase
+    .from('scores')
+    .select('song_id, created_at, songs(*)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit * 3)
+
+  if (!data) return []
+
+  const seen = new Set<string>()
+  const songs: import('@/types').Song[] = []
+  for (const row of data) {
+    if (!seen.has(row.song_id) && row.songs) {
+      seen.add(row.song_id)
+      songs.push(row.songs as unknown as import('@/types').Song)
+    }
+    if (songs.length >= limit) break
+  }
+  return songs
 }
 
 export async function getBestScoreForUser(userId: string, songId: string): Promise<{ score: number; stars: number } | null> {
