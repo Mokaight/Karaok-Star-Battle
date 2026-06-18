@@ -26,8 +26,11 @@ function cleanArtist(s: string): string {
 
 function cleanTitle(s: string): string {
   return s
-    .replace(/\(.*?(official|video|audio|lyrics|clip|mv|music|hd|hq|ft\.|feat\.).*?\)/gi, '')
-    .replace(/\[.*?\]/g, '')
+    // Contenu entre parenthèses ou crochets avec mots-clés
+    .replace(/[\(\[].*?(official|video|audio|lyrics|clip|mv|music|hd|hq|ft\.|feat\.).*?[\)\]]/gi, '')
+    // Suffixes sans parenthèses — couvre "Official Video", "Official Music Video Remastered", etc.
+    .replace(/\s*[-–—|]?\s*official\b.*$/gi, '')
+    // Normalise em-dash / en-dash
     .replace(/\s*[–—]\s*/g, ' - ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -78,14 +81,24 @@ export async function fetchLyrics(artist: string, title: string): Promise<Lyrics
   if (result) return result
 
   // Tentative 2 : si le titre YouTube est "Artiste - Chanson", parser et retenter
+  let parsedTitle: string | null = null
   const dashIdx = cleanedTitle.indexOf(' - ')
   if (dashIdx > 0) {
     const parsedArtist = cleanedTitle.slice(0, dashIdx).trim()
-    const parsedTitle = cleanTitle(cleanedTitle.slice(dashIdx + 3))
+    parsedTitle = cleanTitle(cleanedTitle.slice(dashIdx + 3))
     result = await lrclibGet(parsedArtist, parsedTitle)
     if (result) return result
   }
 
-  // Tentative 3 : recherche full-text (le plus permissif)
-  return lrclibSearch(cleanedTitle)
+  // Tentative 3 : recherche full-text avec le titre complet nettoyé
+  result = await lrclibSearch(cleanedTitle)
+  if (result) return result
+
+  // Tentative 4 : recherche avec juste la chanson (sans artiste) — plus de chance de matcher
+  if (parsedTitle) {
+    result = await lrclibSearch(parsedTitle)
+    if (result) return result
+  }
+
+  return null
 }
