@@ -82,7 +82,7 @@ export function SplashScreen() {
           className="text-center"
         >
           <h1 className="font-display text-white text-3xl tracking-wide drop-shadow-lg">
-            Karaok Star Battle
+            Star Battle
           </h1>
           <motion.p
             initial={{ opacity: 0 }}

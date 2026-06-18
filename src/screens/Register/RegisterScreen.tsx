@@ -54,7 +54,7 @@ export function RegisterScreen() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <h1 className="font-display text-3xl text-brand-text">Karaok Star Battle</h1>
+          <h1 className="font-display text-3xl text-brand-text">Star Battle</h1>
           <p className="text-brand-muted text-sm mt-1">Chante ta voix. Deviens une légende.</p>
         </motion.div>
 

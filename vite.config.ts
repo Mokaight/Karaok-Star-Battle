@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['avatars/*.png', 'icons/*.png'],
       manifest: {
-        name: 'Karaok Star Battle',
-        short_name: 'KaraokStar',
+        name: 'Star Battle',
+        short_name: 'Star Battle',
         description: 'Chante, défie tes amis, deviens une star !',
         theme_color: '#C9A8E0',
         background_color: '#FDF6FF',
