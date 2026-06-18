@@ -46,8 +46,8 @@ export function useAudioEngine({ videoId, onSongEnded }: UseAudioEngineOptions) 
   const {
     containerRef: ytContainerRef,
     isReady: ytReady,
-    play: ytPlay,
     pause: ytPause,
+    unMute: ytUnmute,
     getCurrentTime,
     getDuration,
   } = useYouTubePlayer({
@@ -57,8 +57,9 @@ export function useAudioEngine({ videoId, onSongEnded }: UseAudioEngineOptions) 
 
   const start = useCallback(async () => {
     amplitudeHistoryRef.current = []
-    // ytPlay() en premier — synchrone dans le geste utilisateur (Firefox/Safari bloquent l'audio après un await)
-    ytPlay()
+    // La vidéo tourne déjà en muet (autoplay:1 mute:1).
+    // unMute() est synchrone dans le geste → Firefox/Safari l'acceptent.
+    ytUnmute()
     const stream = await startRecording()
     if (!stream) {
       ytPause()
@@ -67,7 +68,7 @@ export function useAudioEngine({ videoId, onSongEnded }: UseAudioEngineOptions) 
     connectAnalyser(stream)
     startDrawing()
     setIsStarted(true)
-  }, [startRecording, connectAnalyser, startDrawing, ytPlay, ytPause])
+  }, [startRecording, connectAnalyser, startDrawing, ytUnmute, ytPause])
 
   const forceStop = useCallback(async () => {
     await handleSongEnded()

@@ -19,14 +19,11 @@ export function useYouTubePlayer({ videoId, onEnded, onReady }: UseYouTubePlayer
   const [isReady, setIsReady] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
 
-  // Réinitialise isReady quand le videoId change — évite que start() soit appelé
-  // sur un player en cours de reconstruction (race condition)
   useEffect(() => {
     setIsReady(false)
   }, [videoId])
 
   const initPlayer = useCallback(() => {
-    // Ne pas créer un player avec un videoId vide
     if (!containerRef.current || !window.YT?.Player || !videoId) return
 
     playerRef.current?.destroy?.()
@@ -34,8 +31,12 @@ export function useYouTubePlayer({ videoId, onEnded, onReady }: UseYouTubePlayer
     playerRef.current = new window.YT.Player(containerRef.current, {
       videoId,
       width: '100%',
+      height: '100%',
       playerVars: {
-        autoplay: 0,
+        // autoplay muet : universellement autorisé (pas de blocage Firefox/Safari)
+        // L'utilisateur unmute en appuyant sur le micro
+        autoplay: 1,
+        mute: 1,
         controls: 0,
         disablekb: 1,
         playsinline: 1,
@@ -82,6 +83,7 @@ export function useYouTubePlayer({ videoId, onEnded, onReady }: UseYouTubePlayer
 
   const play = useCallback(() => playerRef.current?.playVideo?.(), [])
   const pause = useCallback(() => playerRef.current?.pauseVideo?.(), [])
+  const unMute = useCallback(() => playerRef.current?.unMute?.(), [])
   const stop = useCallback(() => {
     playerRef.current?.stopVideo?.()
     setIsPlaying(false)
@@ -95,5 +97,5 @@ export function useYouTubePlayer({ videoId, onEnded, onReady }: UseYouTubePlayer
     return playerRef.current?.getDuration?.() ?? 0
   }, [])
 
-  return { containerRef, isReady, isPlaying, play, pause, stop, getCurrentTime, getDuration }
+  return { containerRef, isReady, isPlaying, play, pause, unMute, stop, getCurrentTime, getDuration }
 }

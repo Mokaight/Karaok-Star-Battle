@@ -90,14 +90,15 @@ export function RecordingScreen() {
         </div>
       </div>
 
-      {/* YouTube player — visible pour satisfaire la politique autoplay Firefox/Safari */}
+      {/* YouTube player — visible, wrapper fixe le sizing (le div interne est remplacé par l'iframe) */}
       <div className="px-4 flex-shrink-0">
-        <div
-          ref={ytContainerRef}
-          id="yt-player"
-          className="w-full rounded-2xl overflow-hidden bg-black"
-          style={{ aspectRatio: '16/9' }}
-        />
+        <div className="w-full rounded-2xl overflow-hidden bg-black relative" style={{ aspectRatio: '16/9' }}>
+          <div
+            ref={ytContainerRef}
+            id="yt-player"
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          />
+        </div>
       </div>
 
       {/* Zone principale */}
