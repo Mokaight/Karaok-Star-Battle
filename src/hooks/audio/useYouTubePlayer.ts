@@ -11,9 +11,11 @@ interface UseYouTubePlayerOptions {
   videoId: string
   onEnded?: () => void
   onReady?: () => void
+  autoplay?: 0 | 1
+  mute?: 0 | 1
 }
 
-export function useYouTubePlayer({ videoId, onEnded, onReady }: UseYouTubePlayerOptions) {
+export function useYouTubePlayer({ videoId, onEnded, onReady, autoplay = 1, mute = 1 }: UseYouTubePlayerOptions) {
   const playerRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isReady, setIsReady] = useState(false)
@@ -35,8 +37,8 @@ export function useYouTubePlayer({ videoId, onEnded, onReady }: UseYouTubePlayer
       playerVars: {
         // autoplay muet : universellement autorisé (pas de blocage Firefox/Safari)
         // L'utilisateur unmute en appuyant sur le micro
-        autoplay: 1,
-        mute: 1,
+        autoplay,
+        mute,
         controls: 0,
         disablekb: 1,
         playsinline: 1,
