@@ -105,15 +105,13 @@ export function RecordingScreen() {
             ) : isReadyToStart ? (
               <motion.button
                 initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                whileTap={{ scale: 0.93 }}
+                animate={{ scale: [1, 1.08, 1] }}
+                transition={{ repeat: Infinity, duration: 1.2 }}
+                whileTap={{ scale: 0.88 }}
                 onClick={start}
-                className="flex flex-col items-center gap-4"
+                className="w-28 h-28 rounded-full gradient-brand flex items-center justify-center text-6xl shadow-lg"
               >
-                <div className="w-28 h-28 rounded-full gradient-brand flex items-center justify-center text-6xl shadow-lg">
-                  🎤
-                </div>
-                <p className="text-white font-display text-xl">Appuyer pour chanter</p>
+                🎤
               </motion.button>
             ) : (
               <div className="text-center">
