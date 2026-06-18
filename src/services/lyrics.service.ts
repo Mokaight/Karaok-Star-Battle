@@ -11,6 +11,7 @@ function cleanTitle(s: string): string {
   return s
     .replace(/\(.*?(official|video|audio|lyrics|clip|mv|music|hd|hq|ft\.|feat\.).*?\)/gi, '')
     .replace(/\[.*?\]/g, '')
+    .replace(/\s*[–—]\s*/g, ' - ')  // em-dash / en-dash → tiret standard
     .replace(/\s+/g, ' ')
     .trim()
 }

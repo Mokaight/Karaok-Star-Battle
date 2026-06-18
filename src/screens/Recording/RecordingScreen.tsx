@@ -47,10 +47,8 @@ export function RecordingScreen() {
     requestPermission()
   }, [requestPermission])
 
-  // Pas d'auto-start : Firefox et iOS Safari bloquent l'audio sans geste utilisateur direct
   const isReadyToStart = ytReady && song !== null && !isStarted
 
-  // Progression basée sur la durée réelle du player YouTube
   useEffect(() => {
     if (!isStarted) return
     const interval = setInterval(() => {
@@ -71,22 +69,18 @@ export function RecordingScreen() {
 
   return (
     <div className="fixed inset-0 bg-brand-text flex flex-col">
-      {/* Player YouTube masqué — doit rester visible pour autoplay Chrome */}
-      <div className="absolute bottom-0 right-0 w-1 h-1 overflow-hidden opacity-0 pointer-events-none">
-        <div ref={ytContainerRef} id="yt-player" style={{ width: 1, height: 1 }} />
-      </div>
 
       {/* Header */}
-      <div className="px-6 pt-12 pb-4 text-center">
-        <p className="text-white/60 text-sm font-sans">{song?.artist}</p>
-        <h1 className="font-display text-white text-2xl">{song?.title ?? '...'}</h1>
+      <div className="px-6 pt-12 pb-3 text-center flex-shrink-0">
+        <p className="text-white/60 text-sm font-sans truncate">{song?.artist}</p>
+        <h1 className="font-display text-white text-xl truncate">{song?.title ?? '...'}</h1>
         {mode === 'duel' && (
           <p className="text-brand-rose/80 text-xs font-sans mt-1">⚔️ Mode duel</p>
         )}
       </div>
 
       {/* Barre de progression */}
-      <div className="px-6">
+      <div className="px-6 pb-3 flex-shrink-0">
         <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
           <motion.div
             className="h-full gradient-brand rounded-full"
@@ -96,8 +90,18 @@ export function RecordingScreen() {
         </div>
       </div>
 
+      {/* YouTube player — visible pour satisfaire la politique autoplay Firefox/Safari */}
+      <div className="px-4 flex-shrink-0">
+        <div
+          ref={ytContainerRef}
+          id="yt-player"
+          className="w-full rounded-2xl overflow-hidden bg-black"
+          style={{ aspectRatio: '16/9' }}
+        />
+      </div>
+
       {/* Zone principale */}
-      <div className="flex-1 flex flex-col overflow-hidden px-6 pt-4">
+      <div className="flex-1 flex flex-col overflow-hidden px-6 pt-3 min-h-0">
         {!isStarted ? (
           <div className="flex-1 flex items-center justify-center">
             {micError ? (
@@ -109,7 +113,7 @@ export function RecordingScreen() {
                 transition={{ repeat: Infinity, duration: 1.2 }}
                 whileTap={{ scale: 0.88 }}
                 onClick={start}
-                className="w-28 h-28 rounded-full gradient-brand flex items-center justify-center text-6xl shadow-lg"
+                className="w-20 h-20 rounded-full gradient-brand flex items-center justify-center text-5xl shadow-lg"
               >
                 🎤
               </motion.button>
@@ -118,7 +122,7 @@ export function RecordingScreen() {
                 <motion.div
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ repeat: Infinity, duration: 1 }}
-                  className="text-6xl mb-3"
+                  className="text-5xl mb-3"
                 >
                   🎵
                 </motion.div>
@@ -128,56 +132,42 @@ export function RecordingScreen() {
           </div>
         ) : (
           <>
-            {/* Waveform — réduit si paroles disponibles */}
+            {/* Waveform */}
             <canvas
               ref={canvasRef}
               width={340}
-              height={typeof lyrics === 'string' ? 56 : 160}
-              className="w-full rounded-2xl bg-white/5 flex-shrink-0"
+              height={48}
+              className="w-full rounded-xl bg-white/5 flex-shrink-0"
             />
 
             {/* Paroles */}
             {typeof lyrics === 'string' ? (
-              <div className="flex-1 overflow-y-auto no-scrollbar mt-3">
+              <div className="flex-1 overflow-y-auto no-scrollbar mt-3 min-h-0">
                 <p className="text-white/75 text-sm font-sans leading-7 whitespace-pre-wrap pb-4">
                   {lyrics}
                 </p>
               </div>
             ) : lyrics === null ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                <motion.div
-                  animate={{ scale: [1, 1.08, 1] }}
-                  transition={{ repeat: Infinity, duration: 0.8 }}
-                  className="w-16 h-16 rounded-full bg-brand-rose/30 flex items-center justify-center text-3xl"
-                >
-                  🎤
-                </motion.div>
-                <p className="text-white/35 text-xs font-sans text-center">
+              <div className="flex-1 flex items-center justify-center">
+                <p className="text-white/30 text-xs font-sans text-center">
                   Paroles non disponibles
                 </p>
               </div>
             ) : (
               <div className="flex-1 flex items-center justify-center">
                 <motion.div
-                  animate={{ scale: [1, 1.08, 1] }}
-                  transition={{ repeat: Infinity, duration: 0.8 }}
-                  className="w-16 h-16 rounded-full bg-brand-rose/30 flex items-center justify-center text-3xl"
-                >
-                  🎤
-                </motion.div>
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  className="w-5 h-5 border-2 border-white/20 border-t-white/50 rounded-full"
+                />
               </div>
             )}
           </>
         )}
       </div>
 
-      {/* Espaceur quand pas de paroles */}
-      {isStarted && typeof lyrics !== 'string' && (
-        <div className="flex justify-center py-2" />
-      )}
-
       {/* Actions bas d'écran */}
-      <div className="px-6 pb-10 pt-2 flex flex-col gap-2">
+      <div className="px-6 pb-10 pt-2 flex flex-col gap-2 flex-shrink-0">
         {mode === 'solo' && isStarted && (
           <button
             onClick={forceStop}

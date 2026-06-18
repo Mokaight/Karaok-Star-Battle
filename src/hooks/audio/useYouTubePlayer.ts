@@ -33,6 +33,7 @@ export function useYouTubePlayer({ videoId, onEnded, onReady }: UseYouTubePlayer
 
     playerRef.current = new window.YT.Player(containerRef.current, {
       videoId,
+      width: '100%',
       playerVars: {
         autoplay: 0,
         controls: 0,
