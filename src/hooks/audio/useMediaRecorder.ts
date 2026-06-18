@@ -23,11 +23,15 @@ export function useMediaRecorder() {
     if (!stream) return null
 
     chunksRef.current = []
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : 'audio/mp4'
+    // Ordre de préférence : webm/opus (Chrome, Firefox, Android) → webm → ogg → mp4 (Safari) → défaut navigateur
+    const mimeType = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/mp4',
+    ].find((t) => MediaRecorder.isTypeSupported(t)) ?? ''
 
-    const recorder = new MediaRecorder(stream, { mimeType })
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
     recorderRef.current = recorder
 
     recorder.ondataavailable = (e) => {

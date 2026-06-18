@@ -14,6 +14,8 @@ export function useAnalyser({ onAmplitude }: UseAnalyserOptions = {}) {
 
   const connect = useCallback((stream: MediaStream) => {
     const context = new AudioContext()
+    // Safari crée l'AudioContext en état "suspended" — resume() nécessaire
+    context.resume().catch(() => {})
     contextRef.current = context
 
     const analyser = context.createAnalyser()

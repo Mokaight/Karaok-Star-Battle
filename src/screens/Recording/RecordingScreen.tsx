@@ -69,7 +69,7 @@ export function RecordingScreen() {
   useEffect(() => {
     if (!lyricsRef.current) return
     const active = lyricsRef.current.querySelector<HTMLElement>('[data-active="true"]')
-    active?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    active?.scrollIntoView({ block: 'center' })
   }, [currentLineIdx])
 
   const handleAbandon = () => {
