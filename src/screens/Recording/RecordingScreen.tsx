@@ -18,7 +18,7 @@ export function RecordingScreen() {
   const [song, setSong] = useState<Song | null>(null)
   const [progress, setProgress] = useState(0)
   const [confirmAbandon, setConfirmAbandon] = useState(false)
-  const [lyrics, setLyrics] = useState<string | null>(null)
+  const [lyrics, setLyrics] = useState<string | null | undefined>(undefined)
 
   useEffect(() => {
     if (!songId) return
@@ -132,15 +132,28 @@ export function RecordingScreen() {
             <canvas
               ref={canvasRef}
               width={340}
-              height={lyrics ? 56 : 160}
+              height={typeof lyrics === 'string' ? 56 : 160}
               className="w-full rounded-2xl bg-white/5 flex-shrink-0"
             />
 
             {/* Paroles */}
-            {lyrics ? (
+            {typeof lyrics === 'string' ? (
               <div className="flex-1 overflow-y-auto no-scrollbar mt-3">
                 <p className="text-white/75 text-sm font-sans leading-7 whitespace-pre-wrap pb-4">
                   {lyrics}
+                </p>
+              </div>
+            ) : lyrics === null ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                <motion.div
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ repeat: Infinity, duration: 0.8 }}
+                  className="w-16 h-16 rounded-full bg-brand-rose/30 flex items-center justify-center text-3xl"
+                >
+                  🎤
+                </motion.div>
+                <p className="text-white/35 text-xs font-sans text-center">
+                  Paroles non disponibles
                 </p>
               </div>
             ) : (
@@ -158,8 +171,8 @@ export function RecordingScreen() {
         )}
       </div>
 
-      {/* Mic pulsant (quand paroles absentes et démarré) */}
-      {isStarted && !lyrics && (
+      {/* Espaceur quand pas de paroles */}
+      {isStarted && typeof lyrics !== 'string' && (
         <div className="flex justify-center py-2" />
       )}
 
