@@ -5,6 +5,7 @@ import { useAudioEngine } from '@/hooks/audio/useAudioEngine'
 import { useAudioStore } from '@/stores/audioStore'
 import { useDuelStore } from '@/stores/duelStore'
 import { getSongById } from '@/services/songs.service'
+import { fetchLyrics } from '@/services/lyrics.service'
 import { ROUTES, songRoute } from '@/config/routes'
 import type { Song } from '@/types'
 
@@ -17,9 +18,16 @@ export function RecordingScreen() {
   const [song, setSong] = useState<Song | null>(null)
   const [progress, setProgress] = useState(0)
   const [confirmAbandon, setConfirmAbandon] = useState(false)
+  const [lyrics, setLyrics] = useState<string | null>(null)
 
   useEffect(() => {
-    if (songId) getSongById(songId).then(setSong)
+    if (!songId) return
+    getSongById(songId).then((s) => {
+      setSong(s)
+      if (s) {
+        fetchLyrics(s.artist, s.title).then(setLyrics)
+      }
+    })
   }, [songId])
 
   const handleSongEnded = useCallback(() => {
@@ -29,7 +37,7 @@ export function RecordingScreen() {
     navigate(nextRoute, { replace: true })
   }, [mode, songId, navigate])
 
-  const { ytContainerRef, canvasRef, ytReady, isStarted, micError, start, forceStop, cleanup, requestPermission } =
+  const { ytContainerRef, canvasRef, ytReady, isStarted, micError, start, forceStop, cleanup, requestPermission, getCurrentTime, getDuration } =
     useAudioEngine({
       videoId: song?.youtube_video_id ?? '',
       onSongEnded: handleSongEnded,
@@ -45,13 +53,17 @@ export function RecordingScreen() {
     }
   }, [ytReady, song, isStarted, start])
 
+  // Progression basée sur la durée réelle du player YouTube
   useEffect(() => {
-    if (!isStarted || !song || song.duration_sec === 0) return
+    if (!isStarted) return
     const interval = setInterval(() => {
-      setProgress((p) => Math.min(1, p + 1 / song.duration_sec))
-    }, 1000)
+      const duration = getDuration()
+      if (duration > 0) {
+        setProgress(getCurrentTime() / duration)
+      }
+    }, 500)
     return () => clearInterval(interval)
-  }, [isStarted, song])
+  }, [isStarted, getCurrentTime, getDuration])
 
   const handleAbandon = () => {
     cleanup()
@@ -62,9 +74,9 @@ export function RecordingScreen() {
 
   return (
     <div className="fixed inset-0 bg-brand-text flex flex-col">
-      {/* Player YouTube masqué visuellement mais actif */}
-      <div className="absolute opacity-0 pointer-events-none w-1 h-1 overflow-hidden">
-        <div ref={ytContainerRef} id="yt-player" />
+      {/* Player YouTube masqué — doit rester visible pour autoplay Chrome */}
+      <div className="absolute bottom-0 right-0 w-1 h-1 overflow-hidden opacity-0 pointer-events-none">
+        <div ref={ytContainerRef} id="yt-player" style={{ width: 1, height: 1 }} />
       </div>
 
       {/* Header */}
@@ -82,53 +94,69 @@ export function RecordingScreen() {
           <motion.div
             className="h-full gradient-brand rounded-full"
             animate={{ width: `${progress * 100}%` }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.4 }}
           />
         </div>
       </div>
 
-      {/* Waveform */}
-      <div className="flex-1 flex items-center justify-center px-6">
+      {/* Zone principale */}
+      <div className="flex-1 flex flex-col overflow-hidden px-6 pt-4">
         {!isStarted ? (
-          <div className="text-center">
+          <div className="flex-1 flex items-center justify-center">
             {micError ? (
-              <p className="text-red-400 font-sans text-sm">{micError}</p>
+              <p className="text-red-400 font-sans text-sm text-center">{micError}</p>
             ) : (
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 1 }}
-                className="text-6xl"
-              >
-                🎤
-              </motion.div>
+              <div className="text-center">
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ repeat: Infinity, duration: 1 }}
+                  className="text-6xl mb-3"
+                >
+                  🎤
+                </motion.div>
+                <p className="text-white/50 text-sm font-sans">Chargement...</p>
+              </div>
             )}
-            <p className="text-white/50 text-sm mt-3 font-sans">Chargement...</p>
           </div>
         ) : (
-          <canvas
-            ref={canvasRef}
-            width={340}
-            height={160}
-            className="w-full max-w-[340px] rounded-3xl bg-white/5"
-          />
+          <>
+            {/* Waveform — réduit si paroles disponibles */}
+            <canvas
+              ref={canvasRef}
+              width={340}
+              height={lyrics ? 56 : 160}
+              className="w-full rounded-2xl bg-white/5 flex-shrink-0"
+            />
+
+            {/* Paroles */}
+            {lyrics ? (
+              <div className="flex-1 overflow-y-auto no-scrollbar mt-3">
+                <p className="text-white/75 text-sm font-sans leading-7 whitespace-pre-wrap pb-4">
+                  {lyrics}
+                </p>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <motion.div
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ repeat: Infinity, duration: 0.8 }}
+                  className="w-16 h-16 rounded-full bg-brand-rose/30 flex items-center justify-center text-3xl"
+                >
+                  🎤
+                </motion.div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Micro pulsant */}
-      {isStarted && (
-        <div className="flex justify-center py-4">
-          <motion.div
-            animate={{ scale: [1, 1.08, 1] }}
-            transition={{ repeat: Infinity, duration: 0.8 }}
-            className="w-16 h-16 rounded-full bg-brand-rose/30 flex items-center justify-center text-3xl"
-          >
-            🎤
-          </motion.div>
-        </div>
+      {/* Mic pulsant (quand paroles absentes et démarré) */}
+      {isStarted && !lyrics && (
+        <div className="flex justify-center py-2" />
       )}
 
       {/* Actions bas d'écran */}
-      <div className="px-6 pb-12 flex flex-col gap-2">
+      <div className="px-6 pb-10 pt-2 flex flex-col gap-2">
         {mode === 'solo' && isStarted && (
           <button
             onClick={forceStop}

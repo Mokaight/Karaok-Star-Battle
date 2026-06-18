@@ -19,8 +19,17 @@ export function useYouTubePlayer({ videoId, onEnded, onReady }: UseYouTubePlayer
   const [isReady, setIsReady] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
 
+  // Réinitialise isReady quand le videoId change — évite que start() soit appelé
+  // sur un player en cours de reconstruction (race condition)
+  useEffect(() => {
+    setIsReady(false)
+  }, [videoId])
+
   const initPlayer = useCallback(() => {
-    if (!containerRef.current || !window.YT?.Player) return
+    // Ne pas créer un player avec un videoId vide
+    if (!containerRef.current || !window.YT?.Player || !videoId) return
+
+    playerRef.current?.destroy?.()
 
     playerRef.current = new window.YT.Player(containerRef.current, {
       videoId,
@@ -49,12 +58,13 @@ export function useYouTubePlayer({ videoId, onEnded, onReady }: UseYouTubePlayer
   }, [videoId, onEnded, onReady])
 
   useEffect(() => {
+    if (!videoId) return
+
     if (window.YT?.Player) {
       initPlayer()
       return
     }
 
-    // Charger l'API YouTube si pas encore chargée
     if (!document.getElementById('youtube-api-script')) {
       const script = document.createElement('script')
       script.id = 'youtube-api-script'
@@ -67,7 +77,7 @@ export function useYouTubePlayer({ videoId, onEnded, onReady }: UseYouTubePlayer
     return () => {
       playerRef.current?.destroy?.()
     }
-  }, [initPlayer])
+  }, [initPlayer, videoId])
 
   const play = useCallback(() => playerRef.current?.playVideo?.(), [])
   const pause = useCallback(() => playerRef.current?.pauseVideo?.(), [])

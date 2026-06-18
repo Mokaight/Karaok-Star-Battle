@@ -43,7 +43,13 @@ export function useAudioEngine({ videoId, onSongEnded }: UseAudioEngineOptions) 
     onSongEnded?.()
   }, [stopRecording, disconnectAnalyser, stopDrawing, setRecordingBlob, calculate, onSongEnded])
 
-  const { containerRef: ytContainerRef, isReady: ytReady, play: ytPlay } = useYouTubePlayer({
+  const {
+    containerRef: ytContainerRef,
+    isReady: ytReady,
+    play: ytPlay,
+    getCurrentTime,
+    getDuration,
+  } = useYouTubePlayer({
     videoId,
     onEnded: handleSongEnded,
   })
@@ -80,5 +86,7 @@ export function useAudioEngine({ videoId, onSongEnded }: UseAudioEngineOptions) 
     forceStop,
     cleanup,
     requestPermission,
+    getCurrentTime,
+    getDuration,
   }
 }
