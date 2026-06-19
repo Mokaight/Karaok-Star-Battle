@@ -3,6 +3,8 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ROUTES, songRoute } from '@/config/routes'
 import { useAudioStore } from '@/stores/audioStore'
+import { getSongById } from '@/services/songs.service'
+import { fetchLyrics } from '@/services/lyrics.service'
 import type { RecordingMode } from '@/types'
 
 export function CountdownScreen() {
@@ -20,6 +22,14 @@ export function CountdownScreen() {
     if (!songId) return
     setRecordingContext({ mode, songId, opponentId })
   }, [songId, mode, opponentId])
+
+  // Pré-chargement des paroles pendant le countdown (API la plus lente)
+  useEffect(() => {
+    if (!songId) return
+    getSongById(songId).then((song) => {
+      if (song) fetchLyrics(song.artist, song.title)
+    })
+  }, [songId])
 
   useEffect(() => {
     if (count <= 0) {

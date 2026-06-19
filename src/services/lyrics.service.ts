@@ -72,33 +72,35 @@ async function lrclibSearch(query: string): Promise<LyricsResult | null> {
   }
 }
 
+// Cache module-level : survit aux navigations, évite les double-fetch
+const lyricsCache = new Map<string, LyricsResult | null>()
+
 export async function fetchLyrics(artist: string, title: string): Promise<LyricsResult | null> {
+  const cacheKey = `${artist}__${title}`
+  if (lyricsCache.has(cacheKey)) return lyricsCache.get(cacheKey) ?? null
   const cleanedArtist = cleanArtist(artist)
   const cleanedTitle = cleanTitle(title)
 
   // Tentative 1 : artiste nettoyé + titre nettoyé
   let result = await lrclibGet(cleanedArtist, cleanedTitle)
-  if (result) return result
 
   // Tentative 2 : si le titre YouTube est "Artiste - Chanson", parser et retenter
   let parsedTitle: string | null = null
-  const dashIdx = cleanedTitle.indexOf(' - ')
-  if (dashIdx > 0) {
-    const parsedArtist = cleanedTitle.slice(0, dashIdx).trim()
-    parsedTitle = cleanTitle(cleanedTitle.slice(dashIdx + 3))
-    result = await lrclibGet(parsedArtist, parsedTitle)
-    if (result) return result
+  if (!result) {
+    const dashIdx = cleanedTitle.indexOf(' - ')
+    if (dashIdx > 0) {
+      const parsedArtist = cleanedTitle.slice(0, dashIdx).trim()
+      parsedTitle = cleanTitle(cleanedTitle.slice(dashIdx + 3))
+      result = await lrclibGet(parsedArtist, parsedTitle)
+    }
   }
 
   // Tentative 3 : recherche full-text avec le titre complet nettoyé
-  result = await lrclibSearch(cleanedTitle)
-  if (result) return result
+  if (!result) result = await lrclibSearch(cleanedTitle)
 
-  // Tentative 4 : recherche avec juste la chanson (sans artiste) — plus de chance de matcher
-  if (parsedTitle) {
-    result = await lrclibSearch(parsedTitle)
-    if (result) return result
-  }
+  // Tentative 4 : recherche avec juste la chanson (sans artiste)
+  if (!result && parsedTitle) result = await lrclibSearch(parsedTitle)
 
-  return null
+  lyricsCache.set(cacheKey, result)
+  return result
 }

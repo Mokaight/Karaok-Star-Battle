@@ -129,7 +129,7 @@ export function RecordingScreen() {
             ) : isReadyToStart ? (
               <motion.button
                 initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: [1, 1.08, 1] }}
+                animate={{ scale: [1, 1.08, 1], opacity: 1 }}
                 transition={{ repeat: Infinity, duration: 1.2 }}
                 whileTap={{ scale: 0.88 }}
                 onClick={start}
