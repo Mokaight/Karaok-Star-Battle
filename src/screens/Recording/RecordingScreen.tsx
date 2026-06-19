@@ -23,6 +23,12 @@ export function RecordingScreen() {
   const [currentLineIdx, setCurrentLineIdx] = useState(0)
   const lyricsRef = useRef<HTMLDivElement>(null)
 
+  // Audio pré-chargé depuis le proxy Vercel (blob URL temporaire)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [audioLoading, setAudioLoading] = useState(false)
+  const [audioError, setAudioError] = useState(false)
+  const blobUrlRef = useRef<string | null>(null)
+
   useEffect(() => {
     if (!songId) return
     getSongById(songId).then((s) => {
@@ -30,6 +36,46 @@ export function RecordingScreen() {
       if (s) fetchLyrics(s.artist, s.title).then(setLyrics)
     })
   }, [songId])
+
+  // Pré-chargement audio dès que le videoId est connu
+  useEffect(() => {
+    if (!song?.youtube_video_id) return
+    let cancelled = false
+    const controller = new AbortController()
+    setAudioLoading(true)
+    setAudioError(false)
+
+    fetch(`/api/yt-audio?videoId=${song.youtube_video_id}`, { signal: controller.signal })
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.blob()
+      })
+      .then(blob => {
+        if (cancelled) return
+        const url = URL.createObjectURL(blob)
+        blobUrlRef.current = url
+        setAudioUrl(url)
+        setAudioLoading(false)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAudioError(true)
+          setAudioLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [song?.youtube_video_id])
+
+  // Nettoyage du blob URL à la fin de session
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current)
+    }
+  }, [])
 
   const handleSongEnded = useCallback(() => {
     const nextRoute = mode === 'duel'
@@ -41,6 +87,7 @@ export function RecordingScreen() {
   const { ytContainerRef, canvasRef, ytReady, micReady, isStarted, micError, start, forceStop, cleanup, requestPermission, getCurrentTime, getDuration } =
     useAudioEngine({
       videoId: song?.youtube_video_id ?? '',
+      audioUrl,
       onSongEnded: handleSongEnded,
     })
 
@@ -48,7 +95,8 @@ export function RecordingScreen() {
     requestPermission()
   }, [requestPermission])
 
-  const isReadyToStart = ytReady && micReady && song !== null && !isStarted
+  // Tout est prêt uniquement quand YouTube, le micro et l'audio sont chargés
+  const isReadyToStart = ytReady && micReady && audioUrl !== null && song !== null && !isStarted
 
   useEffect(() => {
     if (!isStarted) return
@@ -56,7 +104,6 @@ export function RecordingScreen() {
       const duration = getDuration()
       const current = getCurrentTime()
       if (duration > 0) setProgress(current / duration)
-      // Mise à jour ligne courante pour paroles synchronisées
       if (lyrics?.synced) {
         const idx = lyrics.synced.reduce((acc, l, i) => (l.time <= current ? i : acc), 0)
         setCurrentLineIdx(idx)
@@ -65,7 +112,6 @@ export function RecordingScreen() {
     return () => clearInterval(interval)
   }, [isStarted, getCurrentTime, getDuration, lyrics])
 
-  // Auto-scroll vers la ligne courante
   useEffect(() => {
     if (!lyricsRef.current) return
     const active = lyricsRef.current.querySelector<HTMLElement>('[data-active="true"]')
@@ -77,6 +123,15 @@ export function RecordingScreen() {
     clearSession()
     clearDuel()
     navigate(songRoute(ROUTES.SONG_DETAIL, songId!), { replace: true })
+  }
+
+  // Message d'état de chargement
+  const loadingMessage = () => {
+    if (!song) return 'Chargement de la chanson…'
+    if (audioLoading) return 'Téléchargement de la musique…'
+    if (!micReady) return 'Activation du micro…'
+    if (!ytReady) return 'Chargement de la vidéo…'
+    return 'Chargement…'
   }
 
   return (
@@ -102,7 +157,7 @@ export function RecordingScreen() {
         </div>
       </div>
 
-      {/* YouTube player — visible, wrapper conserve les dimensions quand YouTube remplace le div */}
+      {/* YouTube player — muet, uniquement pour la vidéo */}
       <div className="px-4 flex-shrink-0">
         <div className="w-full rounded-2xl overflow-hidden bg-black relative" style={{ aspectRatio: '16/9' }}>
           <div
@@ -119,6 +174,10 @@ export function RecordingScreen() {
           <div className="flex-1 flex items-center justify-center">
             {micError ? (
               <p className="text-red-400 font-sans text-sm text-center">{micError}</p>
+            ) : audioError ? (
+              <p className="text-red-400 font-sans text-sm text-center">
+                Impossible de charger la musique.{'\n'}Vérifie ta connexion.
+              </p>
             ) : isReadyToStart ? (
               <motion.button
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -139,7 +198,12 @@ export function RecordingScreen() {
                 >
                   🎵
                 </motion.div>
-                <p className="text-white/50 text-sm font-sans">Chargement...</p>
+                <p className="text-white/50 text-sm font-sans">{loadingMessage()}</p>
+                {audioLoading && (
+                  <p className="text-white/30 text-xs font-sans mt-1">
+                    Patiente quelques secondes…
+                  </p>
+                )}
               </div>
             )}
           </div>

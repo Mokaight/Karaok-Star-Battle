@@ -15,7 +15,7 @@ interface UseYouTubePlayerOptions {
   mute?: 0 | 1
 }
 
-export function useYouTubePlayer({ videoId, onEnded, onReady, autoplay = 1, mute = 1 }: UseYouTubePlayerOptions) {
+export function useYouTubePlayer({ videoId, onEnded, onReady, autoplay = 0, mute = 1 }: UseYouTubePlayerOptions) {
   const playerRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isReady, setIsReady] = useState(false)
