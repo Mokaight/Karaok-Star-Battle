@@ -5,12 +5,14 @@ export function useMediaRecorder() {
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<BlobPart[]>([])
   const [isRecording, setIsRecording] = useState(false)
+  const [micReady, setMicReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const requestPermission = useCallback(async (): Promise<MediaStream | null> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       streamRef.current = stream
+      setMicReady(true)
       return stream
     } catch {
       setError('Microphone non autorisé — vérifie les permissions du navigateur')
@@ -68,5 +70,5 @@ export function useMediaRecorder() {
     recorderRef.current = null
   }, [])
 
-  return { isRecording, error, requestPermission, startRecording, stopRecording, cleanup, streamRef }
+  return { isRecording, micReady, error, requestPermission, startRecording, stopRecording, cleanup, streamRef }
 }

@@ -12,9 +12,9 @@ export function useAnalyser({ onAmplitude }: UseAnalyserOptions = {}) {
   const rafRef = useRef<number>(0)
   const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null)
 
-  const connect = useCallback((stream: MediaStream) => {
-    const context = new AudioContext()
-    // Safari crée l'AudioContext en état "suspended" — resume() nécessaire
+  const connect = useCallback((stream: MediaStream, ctx?: AudioContext) => {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    const context = ctx ?? new AudioCtx()
     context.resume().catch(() => {})
     contextRef.current = context
 

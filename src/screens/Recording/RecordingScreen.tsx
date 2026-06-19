@@ -38,7 +38,7 @@ export function RecordingScreen() {
     navigate(nextRoute, { replace: true })
   }, [mode, songId, navigate])
 
-  const { ytContainerRef, canvasRef, ytReady, isStarted, micError, start, forceStop, cleanup, requestPermission, getCurrentTime, getDuration } =
+  const { ytContainerRef, canvasRef, ytReady, micReady, isStarted, micError, start, forceStop, cleanup, requestPermission, getCurrentTime, getDuration } =
     useAudioEngine({
       videoId: song?.youtube_video_id ?? '',
       onSongEnded: handleSongEnded,
@@ -48,7 +48,7 @@ export function RecordingScreen() {
     requestPermission()
   }, [requestPermission])
 
-  const isReadyToStart = ytReady && song !== null && !isStarted
+  const isReadyToStart = ytReady && micReady && song !== null && !isStarted
 
   useEffect(() => {
     if (!isStarted) return
