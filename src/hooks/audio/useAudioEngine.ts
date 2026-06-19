@@ -53,6 +53,9 @@ export function useAudioEngine({ videoId, onSongEnded }: UseAudioEngineOptions) 
   } = useYouTubePlayer({
     videoId,
     onEnded: handleSongEnded,
+    // Micro-first iOS : l'iframe YouTube est injecté seulement après que getUserMedia
+    // a établi la session audio PlayAndRecord. Ça évite le conflit de session.
+    enabled: micReady,
   })
 
   // Entièrement synchrone — aucun await dans le geste utilisateur.
