@@ -8,6 +8,7 @@ import { GradientButton } from '@/components/shared/GradientButton'
 import { StarRating } from '@/components/shared/StarRating'
 import { getSongById } from '@/services/songs.service'
 import { getBestScoreForUser } from '@/services/scores.service'
+import { fetchLyrics } from '@/services/lyrics.service'
 import { useAuthStore } from '@/stores/authStore'
 import { ROUTES, songRoute } from '@/config/routes'
 import { formatDuration } from '@/lib/formatters'
@@ -32,7 +33,12 @@ export function SongDetailScreen() {
       getSongById(songId),
       profile ? getBestScoreForUser(profile.id, songId) : Promise.resolve(null),
     ])
-      .then(([s, best]) => { setSong(s); setMyBest(best); setIsLoading(false) })
+      .then(([s, best]) => {
+        setSong(s)
+        setMyBest(best)
+        setIsLoading(false)
+        if (s) fetchLyrics(s.artist, s.title)
+      })
       .catch(() => { setError(true); setIsLoading(false) })
   }
 
