@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/yt-audio.ts": {
-      "maxDuration": 60
-    }
-  }
-}
