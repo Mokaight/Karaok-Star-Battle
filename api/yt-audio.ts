@@ -1,55 +1,72 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
+// Plusieurs instances Piped en fallback
+const PIPED_INSTANCES = [
+  'https://pipedapi.kavin.rocks',
+  'https://piped-api.privacy.com.de',
+  'https://api.piped.projectsegfau.lt',
+]
+
+interface PipedStream {
+  url: string
+  bitrate: number
+  mimeType: string
+}
+
+interface PipedResponse {
+  audioStreams?: PipedStream[]
+  error?: string
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const videoId = req.query.videoId as string
   if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
     return res.status(400).json({ error: 'Invalid videoId' })
   }
 
-  try {
-    // cobalt.tools : API open-source qui gère le contournement bot YouTube
-    const cobaltRes = await fetch('https://api.cobalt.tools/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
-        url: `https://www.youtube.com/watch?v=${videoId}`,
-        downloadMode: 'audio',
-        audioFormat: 'best',
-      }),
-    })
+  for (const instance of PIPED_INSTANCES) {
+    try {
+      const pipedRes = await fetch(`${instance}/streams/${videoId}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        signal: AbortSignal.timeout(8000),
+      })
+      if (!pipedRes.ok) continue
 
-    const data = await cobaltRes.json() as { status: string; url?: string; error?: { code: string } }
+      const data = await pipedRes.json() as PipedResponse
+      if (data.error) continue
 
-    if (!data.url || !['redirect', 'tunnel', 'stream'].includes(data.status)) {
-      console.error('[yt-audio] cobalt error:', data)
-      return res.status(502).json({ error: data.error?.code ?? 'cobalt_failed' })
-    }
+      const audioStream = data.audioStreams
+        ?.filter(s => s.url?.startsWith('http'))
+        .sort((a, b) => a.bitrate - b.bitrate)[0]
 
-    // Stream l'audio depuis cobalt vers le client
-    const audioRes = await fetch(data.url)
-    if (!audioRes.ok) throw new Error(`upstream ${audioRes.status}`)
+      if (!audioStream) continue
 
-    res.setHeader('Content-Type', audioRes.headers.get('Content-Type') ?? 'audio/mp4')
-    res.setHeader('Cache-Control', 'no-store')
-    res.setHeader('Access-Control-Allow-Origin', '*')
+      // Stream audio YouTube CDN → Vercel → client
+      const audioRes = await fetch(audioStream.url, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        signal: AbortSignal.timeout(30000),
+      })
+      if (!audioRes.ok || !audioRes.body) continue
 
-    if (audioRes.body) {
+      res.setHeader('Content-Type', audioStream.mimeType.split(';')[0] || 'audio/mp4')
+      res.setHeader('Cache-Control', 'no-store')
+      res.setHeader('Access-Control-Allow-Origin', '*')
+
       const reader = audioRes.body.getReader()
-      const pump = async () => {
+      const pump = async (): Promise<void> => {
         const { done, value } = await reader.read()
         if (done) { res.end(); return }
         res.write(Buffer.from(value))
-        await pump()
+        return pump()
       }
       await pump()
-    } else {
-      res.end()
+      return
+
+    } catch {
+      continue
     }
-  } catch (err) {
-    console.error('[yt-audio]', err)
-    res.status(500).json({ error: String(err) })
   }
+
+  console.error('[yt-audio] all Piped instances failed for', videoId)
+  res.status(502).json({ error: 'audio_unavailable' })
 }
