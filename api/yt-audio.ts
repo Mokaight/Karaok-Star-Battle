@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import ytdl from '@distube/ytdl-core'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const videoId = req.query.videoId as string
@@ -8,21 +7,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${videoId}`)
-    const format = ytdl.chooseFormat(info.formats, {
-      filter: 'audioonly',
-      quality: 'lowestaudio',
+    // cobalt.tools : API open-source qui gère le contournement bot YouTube
+    const cobaltRes = await fetch('https://api.cobalt.tools/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+        downloadMode: 'audio',
+        audioFormat: 'best',
+      }),
     })
 
-    if (!format?.url) return res.status(404).json({ error: 'No audio format' })
+    const data = await cobaltRes.json() as { status: string; url?: string; error?: { code: string } }
 
-    res.setHeader('Content-Type', format.mimeType?.split(';')[0] ?? 'audio/webm')
+    if (!data.url || !['redirect', 'tunnel', 'stream'].includes(data.status)) {
+      console.error('[yt-audio] cobalt error:', data)
+      return res.status(502).json({ error: data.error?.code ?? 'cobalt_failed' })
+    }
+
+    // Stream l'audio depuis cobalt vers le client
+    const audioRes = await fetch(data.url)
+    if (!audioRes.ok) throw new Error(`upstream ${audioRes.status}`)
+
+    res.setHeader('Content-Type', audioRes.headers.get('Content-Type') ?? 'audio/mp4')
     res.setHeader('Cache-Control', 'no-store')
     res.setHeader('Access-Control-Allow-Origin', '*')
 
-    ytdl(`https://www.youtube.com/watch?v=${videoId}`, { format }).pipe(res)
+    if (audioRes.body) {
+      const reader = audioRes.body.getReader()
+      const pump = async () => {
+        const { done, value } = await reader.read()
+        if (done) { res.end(); return }
+        res.write(Buffer.from(value))
+        await pump()
+      }
+      await pump()
+    } else {
+      res.end()
+    }
   } catch (err) {
     console.error('[yt-audio]', err)
-    res.status(500).json({ error: 'Failed to fetch audio' })
+    res.status(500).json({ error: String(err) })
   }
 }
