@@ -9,15 +9,13 @@ import type { ScoreResult } from '@/types'
 
 interface UseAudioEngineOptions {
   videoId: string
-  audioUrl: string | null  // blob URL pré-chargé — null = pas encore prêt
   onSongEnded?: () => void
 }
 
-export function useAudioEngine({ videoId, audioUrl, onSongEnded }: UseAudioEngineOptions) {
+export function useAudioEngine({ videoId, onSongEnded }: UseAudioEngineOptions) {
   const [isStarted, setIsStarted] = useState(false)
   const [result, setResult] = useState<ScoreResult | null>(null)
   const amplitudeHistoryRef = useRef<number[]>([])
-  const audioElRef = useRef<HTMLAudioElement | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
 
   const { appendAmplitude, setRecordingBlob } = useAudioStore()
@@ -32,21 +30,9 @@ export function useAudioEngine({ videoId, audioUrl, onSongEnded }: UseAudioEngin
     },
   })
 
-  const { startRecording, stopRecording, cleanup: cleanupRecorder, error: micError, requestPermission, micReady } = useMediaRecorder()
-
-  const {
-    containerRef: ytContainerRef,
-    isReady: ytReady,
-    play: ytPlay,
-    pause: ytPause,
-  } = useYouTubePlayer({ videoId })
+  const { startRecordingSync, stopRecording, cleanup: cleanupRecorder, error: micError, requestPermission, micReady } = useMediaRecorder()
 
   const handleSongEnded = useCallback(async () => {
-    if (audioElRef.current) {
-      audioElRef.current.pause()
-      audioElRef.current.onended = null
-    }
-    ytPause()
     const blob = await stopRecording()
     disconnectAnalyser()
     stopDrawing()
@@ -54,59 +40,53 @@ export function useAudioEngine({ videoId, audioUrl, onSongEnded }: UseAudioEngin
     const scoreResult = calculate(amplitudeHistoryRef.current)
     setResult(scoreResult)
     onSongEnded?.()
-  }, [ytPause, stopRecording, disconnectAnalyser, stopDrawing, setRecordingBlob, calculate, onSongEnded])
+  }, [stopRecording, disconnectAnalyser, stopDrawing, setRecordingBlob, calculate, onSongEnded])
 
-  const start = useCallback(async () => {
-    if (!audioUrl) return
+  const {
+    containerRef: ytContainerRef,
+    isReady: ytReady,
+    play: ytPlay,
+    pause: ytPause,
+    unMute: ytUnmute,
+    getCurrentTime,
+    getDuration,
+  } = useYouTubePlayer({
+    videoId,
+    onEnded: handleSongEnded,
+  })
+
+  // Entièrement synchrone — aucun await dans le geste utilisateur.
+  // iOS Safari maintient le contexte de geste pour toute la fonction synchrone,
+  // ce qui permet à ytUnmute/ytPlay d'être acceptés après AudioContext et MediaRecorder.
+  const start = useCallback(() => {
     amplitudeHistoryRef.current = []
 
-    // AudioContext gate — iOS ouvre une session audio mixte play+record dans le geste synchrone
+    // 1. AudioContext gate : iOS ouvre une session audio mixte play+record
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     const ctx = new AudioCtx()
     audioCtxRef.current = ctx
     ctx.resume().catch(() => {})
 
-    // Créer et démarrer l'audio depuis le blob pré-chargé (synchrone dans le geste)
-    const audio = new Audio(audioUrl)
-    audioElRef.current = audio
-    audio.play().catch(() => {})
+    // 2. Démarrer l'enregistrement depuis le stream déjà capturé (synchrone)
+    const stream = startRecordingSync()
+    if (!stream) return
 
-    // Démarrer la vidéo YouTube en muet (synchronisation visuelle)
+    // 3. Démarrer YouTube avec le son — toujours dans le même geste synchrone
+    ytUnmute()
     ytPlay()
 
-    // Partie async : démarrer l'enregistrement micro
-    const stream = await startRecording()
-    if (!stream) {
-      audio.pause()
-      ytPause()
-      return
-    }
-
-    audio.onended = () => { handleSongEnded() }
-
+    // 4. Connecter l'analyser au AudioContext déjà actif
     connectAnalyser(stream, ctx)
     startDrawing()
     setIsStarted(true)
-  }, [audioUrl, startRecording, connectAnalyser, startDrawing, ytPlay, ytPause, handleSongEnded])
-
-  const getCurrentTime = useCallback((): number => {
-    return audioElRef.current?.currentTime ?? 0
-  }, [])
-
-  const getDuration = useCallback((): number => {
-    return audioElRef.current?.duration ?? 0
-  }, [])
+  }, [startRecordingSync, connectAnalyser, startDrawing, ytUnmute, ytPlay])
 
   const forceStop = useCallback(async () => {
+    ytPause()
     await handleSongEnded()
-  }, [handleSongEnded])
+  }, [handleSongEnded, ytPause])
 
   const cleanup = useCallback(() => {
-    if (audioElRef.current) {
-      audioElRef.current.pause()
-      audioElRef.current.onended = null
-      audioElRef.current = null
-    }
     ytPause()
     disconnectAnalyser()
     stopDrawing()

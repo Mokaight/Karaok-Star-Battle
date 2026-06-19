@@ -20,12 +20,13 @@ export function useMediaRecorder() {
     }
   }, [])
 
-  const startRecording = useCallback(async (): Promise<MediaStream | null> => {
-    const stream = streamRef.current ?? await requestPermission()
+  // Version synchrone — utilise le stream déjà capturé (requestPermission au mount).
+  // Aucun await → reste dans le contexte de geste utilisateur iOS.
+  const startRecordingSync = useCallback((): MediaStream | null => {
+    const stream = streamRef.current
     if (!stream) return null
 
     chunksRef.current = []
-    // Ordre de préférence : webm/opus (Chrome, Firefox, Android) → webm → ogg → mp4 (Safari) → défaut navigateur
     const mimeType = [
       'audio/webm;codecs=opus',
       'audio/webm',
@@ -35,15 +36,17 @@ export function useMediaRecorder() {
 
     const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
     recorderRef.current = recorder
-
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunksRef.current.push(e.data)
-    }
-
+    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
     recorder.start(100)
     setIsRecording(true)
     return stream
-  }, [requestPermission])
+  }, [])
+
+  const startRecording = useCallback(async (): Promise<MediaStream | null> => {
+    const stream = streamRef.current ?? await requestPermission()
+    if (!stream) return null
+    return startRecordingSync() ? stream : null
+  }, [requestPermission, startRecordingSync])
 
   const stopRecording = useCallback((): Promise<Blob | null> => {
     return new Promise((resolve) => {
@@ -70,5 +73,5 @@ export function useMediaRecorder() {
     recorderRef.current = null
   }, [])
 
-  return { isRecording, micReady, error, requestPermission, startRecording, stopRecording, cleanup, streamRef }
+  return { isRecording, micReady, error, requestPermission, startRecording, startRecordingSync, stopRecording, cleanup, streamRef }
 }
