@@ -5,7 +5,6 @@ import { AppShell } from '@/components/shared/AppShell'
 import { GradientButton } from '@/components/shared/GradientButton'
 import { useAudioStore } from '@/stores/audioStore'
 import { useAuthStore } from '@/stores/authStore'
-import { useYouTubePlayer } from '@/hooks/audio/useYouTubePlayer'
 import { getSongById } from '@/services/songs.service'
 import { ROUTES, songRoute } from '@/config/routes'
 import { useScoreCalculator } from '@/hooks/audio/useScoreCalculator'
@@ -38,35 +37,21 @@ export function PlaybackScreen() {
     return () => URL.revokeObjectURL(url)
   }, [recordingBlob])
 
-  const { containerRef: ytContainerRef, isReady: ytReady, play: ytPlay, pause: ytPause } =
-    useYouTubePlayer({
-      videoId: song?.youtube_video_id ?? '',
-      autoplay: 0,
-      mute: 0,
-      onEnded: () => {
-        setIsPlaying(false)
-        audioRef.current?.pause()
-      },
-    })
-
   const togglePlay = () => {
     if (!audioRef.current) return
     if (isPlaying) {
       audioRef.current.pause()
-      ytPause()
       setIsPlaying(false)
     } else {
-      // Les deux démarrent en synchrone dans le geste — Firefox/Safari l'acceptent
       audioRef.current.currentTime = 0
       audioRef.current.play()
-      ytPlay()
       setIsPlaying(true)
     }
   }
 
   const handleValidate = async () => {
     if (!songId || !profile) return
-    ytPause()
+    audioRef.current?.pause()
     setIsSubmitting(true)
     const { score, stars } = calculate(amplitudeHistory)
     try {
@@ -79,10 +64,14 @@ export function PlaybackScreen() {
   }
 
   const handleRetry = () => {
-    ytPause()
+    audioRef.current?.pause()
     clearSession()
     navigate(songRoute(ROUTES.COUNTDOWN, songId!), { replace: true, state: { mode: 'solo' } })
   }
+
+  const thumbnailUrl = song?.youtube_video_id
+    ? `https://img.youtube.com/vi/${song.youtube_video_id}/hqdefault.jpg`
+    : null
 
   return (
     <AppShell showNav={false}>
@@ -94,13 +83,14 @@ export function PlaybackScreen() {
           </p>
         </div>
 
-        {/* YouTube player synchronisé */}
-        {song?.youtube_video_id && (
+        {/* Miniature YouTube — non cliquable */}
+        {thumbnailUrl && (
           <div className="rounded-2xl overflow-hidden bg-black relative flex-shrink-0" style={{ aspectRatio: '16/9' }}>
-            <div
-              ref={ytContainerRef}
-              id="yt-playback"
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+            <img
+              src={thumbnailUrl}
+              alt={song?.title}
+              className="w-full h-full object-cover pointer-events-none select-none"
+              draggable={false}
             />
           </div>
         )}
@@ -109,10 +99,7 @@ export function PlaybackScreen() {
           <audio
             ref={audioRef}
             src={audioUrl}
-            onEnded={() => {
-              setIsPlaying(false)
-              ytPause()
-            }}
+            onEnded={() => setIsPlaying(false)}
           />
         )}
 
@@ -121,13 +108,13 @@ export function PlaybackScreen() {
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={togglePlay}
-            disabled={!audioUrl || !ytReady}
+            disabled={!audioUrl}
             className="w-24 h-24 rounded-full gradient-brand flex items-center justify-center text-5xl shadow-glow disabled:opacity-50"
           >
             {isPlaying ? '⏸' : '▶️'}
           </motion.button>
           <p className="text-brand-muted text-xs font-sans">
-            {!ytReady ? 'Chargement...' : isPlaying ? 'Voix + musique en cours' : 'Écoute ta voix sur la musique'}
+            {isPlaying ? 'Écoute en cours…' : 'Écoute ta voix'}
           </p>
         </div>
 
