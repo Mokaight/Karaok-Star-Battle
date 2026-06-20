@@ -31,46 +31,71 @@ export function SplashScreen() {
           transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.2 }}
           className="w-32 h-32 bg-white/20 rounded-[2.5rem] flex items-center justify-center shadow-2xl backdrop-blur-sm relative overflow-hidden"
         >
-          {/* Ligne ondulée SVG */}
+          {/* Ligne ondulée verticale */}
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 128 128">
             <motion.path
-              d="M0,64 C20,40 40,88 64,64 C88,40 108,88 128,64"
+              d="M64,0 C44,26 84,52 64,78 C44,104 82,116 64,128"
               fill="none"
               stroke="white"
-              strokeWidth="6"
+              strokeWidth="7"
               strokeLinecap="round"
               initial={{ pathLength: 0 }}
               animate={{ pathLength: 1 }}
               transition={{ duration: 1, delay: 0.5 }}
             />
           </svg>
-          {/* VS */}
-          <span className="font-display text-white text-xl z-10">VS</span>
-          {/* Notes de musique */}
+          {/* VS — sombre au centre */}
+          <span className="font-display text-white/90 text-lg z-10 drop-shadow-sm">VS</span>
+          {/* Caméra — gauche haut */}
+          <motion.span
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.85 }}
+            className="absolute top-3 left-3 text-white/80 text-base"
+          >
+            📷
+          </motion.span>
+          {/* Micro — gauche bas */}
+          <motion.span
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.95 }}
+            className="absolute bottom-4 left-4 text-white/80 text-lg"
+          >
+            🎤
+          </motion.span>
+          {/* Notes de musique — droite */}
           <motion.span
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="absolute top-3 right-4 text-white/80 text-lg"
+            className="absolute top-2 right-3 text-white/85 text-lg"
           >
             ♪
           </motion.span>
           <motion.span
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="absolute top-6 right-8 text-white/60 text-sm"
+            transition={{ delay: 1.0 }}
+            className="absolute top-9 right-2 text-white/65 text-base"
           >
             ♫
           </motion.span>
-          {/* Micro */}
           <motion.span
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.9 }}
-            className="absolute bottom-5 left-5 text-white/80 text-xl"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1 }}
+            className="absolute bottom-8 right-4 text-white/75 text-base"
           >
-            🎤
+            ♪
+          </motion.span>
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+            className="absolute bottom-3 right-2 text-white/55 text-sm"
+          >
+            ♩
           </motion.span>
         </motion.div>
 

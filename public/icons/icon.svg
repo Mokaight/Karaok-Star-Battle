@@ -1,21 +1,73 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#C9A8E0"/>
-      <stop offset="50%" style="stop-color:#F4A0C8"/>
-      <stop offset="100%" style="stop-color:#FBBF8A"/>
+      <stop offset="0%" style="stop-color:#9333EA"/>
+      <stop offset="45%" style="stop-color:#EC4899"/>
+      <stop offset="100%" style="stop-color:#F97316"/>
     </linearGradient>
   </defs>
-  <!-- Fond arrondi -->
-  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
-  <!-- Ligne ondulée -->
-  <path d="M0,256 C80,180 160,330 256,256 C352,182 432,330 512,256"
-        fill="none" stroke="white" stroke-width="28" stroke-linecap="round" opacity="0.9"/>
-  <!-- VS -->
-  <text x="256" y="280" font-family="Arial, sans-serif" font-size="80"
-        font-weight="bold" fill="white" text-anchor="middle" opacity="0.95">VS</text>
-  <!-- Micro -->
-  <text x="150" y="380" font-size="90" text-anchor="middle">🎤</text>
-  <!-- Note de musique -->
-  <text x="380" y="160" font-size="80" text-anchor="middle">♪</text>
+
+  <!-- Fond arrondi style app icon -->
+  <rect width="512" height="512" rx="115" fill="url(#bg)"/>
+
+  <!-- Ligne ondulée verticale — sépare gauche (chanteur) et droite (musique) -->
+  <path d="M 256,0 C 210,105 308,210 256,310 C 204,410 302,465 256,512"
+        fill="none" stroke="white" stroke-width="34" stroke-linecap="round" opacity="0.88"/>
+
+  <!-- VS — texte sombre au centre -->
+  <text x="256" y="294"
+        font-family="'Arial Black', Impact, Arial, sans-serif"
+        font-size="76" font-weight="900"
+        fill="#1a0a2e" text-anchor="middle" opacity="0.90">VS</text>
+
+  <!-- ═══ GAUCHE : appareil photo (haut) + micro (bas) ═══ -->
+
+  <!-- Corps appareil photo -->
+  <rect x="48" y="138" width="130" height="94" rx="14" fill="#1a0a2e" opacity="0.85"/>
+  <!-- Bosse viseur (haut-centre du corps) -->
+  <rect x="82" y="122" width="44" height="20" rx="7" fill="#1a0a2e" opacity="0.85"/>
+  <!-- Objectif — anneau extérieur -->
+  <circle cx="113" cy="185" r="33" fill="#7C3AED" opacity="0.45"/>
+  <!-- Objectif — anneau milieu -->
+  <circle cx="113" cy="185" r="24" fill="#1a0a2e" opacity="0.85"/>
+  <!-- Objectif — pupille -->
+  <circle cx="113" cy="185" r="11" fill="#3B1F6E" opacity="0.6"/>
+  <!-- Voyant flash (haut-droit du corps) -->
+  <circle cx="160" cy="152" r="8" fill="#1a0a2e" opacity="0.65"/>
+
+  <!-- Microphone à main (bas-gauche) -->
+  <!-- Tête capsule -->
+  <ellipse cx="118" cy="325" rx="22" ry="30" fill="#1a0a2e" opacity="0.85"/>
+  <!-- Grille capsule -->
+  <line x1="97" y1="313" x2="139" y2="313" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.28"/>
+  <line x1="97" y1="323" x2="139" y2="323" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.28"/>
+  <line x1="97" y1="333" x2="139" y2="333" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.28"/>
+  <!-- Manche -->
+  <rect x="106" y="352" width="24" height="88" rx="12" fill="#1a0a2e" opacity="0.85"/>
+
+  <!-- ═══ DROITE : notes de musique ═══ -->
+
+  <!-- Note 1 — grande, haut-droite -->
+  <text x="392" y="132"
+        font-family="Arial, sans-serif" font-size="84"
+        fill="#1a0a2e" text-anchor="middle" opacity="0.85">♪</text>
+
+  <!-- Note 2 — moyenne, milieu-droite, légèrement inclinée -->
+  <g transform="rotate(-10, 438, 242)">
+    <text x="438" y="242"
+          font-family="Arial, sans-serif" font-size="66"
+          fill="#1a0a2e" text-anchor="middle" opacity="0.85">♫</text>
+  </g>
+
+  <!-- Note 3 — grande, bas-milieu droite -->
+  <text x="372" y="350"
+        font-family="Arial, sans-serif" font-size="76"
+        fill="#1a0a2e" text-anchor="middle" opacity="0.85">♪</text>
+
+  <!-- Note 4 — petite, bas-droite, légèrement inclinée -->
+  <g transform="rotate(8, 430, 442)">
+    <text x="430" y="442"
+          font-family="Arial, sans-serif" font-size="56"
+          fill="#1a0a2e" text-anchor="middle" opacity="0.85">♩</text>
+  </g>
 </svg>
