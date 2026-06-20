@@ -17,10 +17,13 @@ export function PlaybackScreen() {
   const { recordingBlob, amplitudeHistory, clearSession } = useAudioStore()
   const profile = useAuthStore((s) => s.profile)
   const { calculate } = useScoreCalculator()
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  // L'élément <audio> est toujours dans le DOM — évite les problèmes de ref timing
+  const audioRef = useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [audioReady, setAudioReady] = useState(false)
+  const [audioError, setAudioError] = useState<string | null>(null)
   const [song, setSong] = useState<Song | null>(null)
 
   useEffect(() => {
@@ -34,24 +37,35 @@ export function PlaybackScreen() {
     }
     const url = URL.createObjectURL(recordingBlob)
     setAudioUrl(url)
+    setAudioReady(false)
+    setAudioError(null)
     return () => URL.revokeObjectURL(url)
   }, [recordingBlob])
 
   const togglePlay = () => {
-    if (!audioRef.current) return
+    const audio = audioRef.current
+    if (!audio || !audioReady) return
+
     if (isPlaying) {
-      audioRef.current.pause()
+      audio.pause()
       setIsPlaying(false)
     } else {
-      audioRef.current.currentTime = 0
-      audioRef.current.play()
-      setIsPlaying(true)
+      // Revenir au début seulement si la lecture est terminée
+      if (audio.ended) audio.currentTime = 0
+
+      audio.play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.error('[PlaybackScreen] audio.play() failed:', err)
+          setAudioError('Impossible de lire l\'enregistrement — ' + (err?.message ?? String(err)))
+        })
     }
   }
 
   const handleValidate = async () => {
     if (!songId || !profile) return
     audioRef.current?.pause()
+    setIsPlaying(false)
     setIsSubmitting(true)
     const { score, stars } = calculate(amplitudeHistory)
     try {
@@ -65,6 +79,7 @@ export function PlaybackScreen() {
 
   const handleRetry = () => {
     audioRef.current?.pause()
+    setIsPlaying(false)
     clearSession()
     navigate(songRoute(ROUTES.COUNTDOWN, songId!), { replace: true, state: { mode: 'solo' } })
   }
@@ -75,6 +90,16 @@ export function PlaybackScreen() {
 
   return (
     <AppShell showNav={false}>
+      {/* Élément audio toujours dans le DOM — ref immédiatement disponible */}
+      <audio
+        ref={audioRef}
+        src={audioUrl ?? undefined}
+        preload="auto"
+        onCanPlay={() => setAudioReady(true)}
+        onEnded={() => setIsPlaying(false)}
+        onError={() => setAudioError('Format audio non supporté par ce navigateur')}
+      />
+
       <div className="flex flex-col h-full px-6 py-12 gap-4">
         <div className="text-center">
           <h1 className="font-display text-3xl text-brand-text">Réécoute</h1>
@@ -95,27 +120,29 @@ export function PlaybackScreen() {
           </div>
         )}
 
-        {audioUrl && (
-          <audio
-            ref={audioRef}
-            src={audioUrl}
-            onEnded={() => setIsPlaying(false)}
-          />
-        )}
-
         {/* Bouton play/pause */}
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={togglePlay}
-            disabled={!audioUrl}
-            className="w-24 h-24 rounded-full gradient-brand flex items-center justify-center text-5xl shadow-glow disabled:opacity-50"
-          >
-            {isPlaying ? '⏸' : '▶️'}
-          </motion.button>
-          <p className="text-brand-muted text-xs font-sans">
-            {isPlaying ? 'Écoute en cours…' : 'Écoute ta voix'}
-          </p>
+          {audioError ? (
+            <p className="text-red-400 text-sm text-center font-sans px-4">{audioError}</p>
+          ) : (
+            <>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={togglePlay}
+                disabled={!audioReady}
+                className="w-24 h-24 rounded-full gradient-brand flex items-center justify-center text-5xl shadow-glow disabled:opacity-40"
+              >
+                {isPlaying ? '⏸' : '▶️'}
+              </motion.button>
+              <p className="text-brand-muted text-xs font-sans">
+                {!audioReady
+                  ? 'Préparation…'
+                  : isPlaying
+                  ? 'Écoute en cours…'
+                  : 'Écoute ta voix'}
+              </p>
+            </>
+          )}
         </div>
 
         <div className="flex flex-col gap-3">
